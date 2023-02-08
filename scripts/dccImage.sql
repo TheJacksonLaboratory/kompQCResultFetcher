@@ -6,6 +6,15 @@ FROM
 WHERE
 ExternalID IS NOT NULL AND CHAR_LENGTH(ExternalID) > 0 AND
     _dataType_key = 7;
+-- Stock numbers as JR numbers for complete KOMP lines.
+SELECT
+    CONCAT('JR', RIGHT(StockNumber, 5)) AS JR
+FROM
+    Line
+WHERE
+    _LineStatus_key = 13;
+--TO GET THE JR NUMBERS – ALSO REFERED TO AS colony_ids
+
 -- Get mouse ids as well as JR and IMPC code for procedure
 SELECT
     DISTINCT OrganismID, CONCAT('JR', RIGHT(StockNumber, 5)) AS JR, ProcedureDefinition.ExternalID AS TestImpcCode
@@ -34,19 +43,6 @@ WHERE
 ExternalID IS NOT NULL AND
 CHAR_LENGTH(ExternalID) > 0 AND
     _dataType_key = 7;  -- File type
--- Stock numbers as JR numbers for complete KOMP lines.
-SELECT
-    CONCAT('JR', RIGHT(StockNumber, 5)) AS JR
-FROM
-    Line
-WHERE
-    _LineStatus_key = 13;
 
--- IMPC Paramater codes that are files.
-SELECT
-    DISTINCT ExternalID AS ImpcCode
-FROM
-    Output
-WHERE
-ExternalID IS NOT NULL AND CHAR_LENGTH(ExternalID) > 0 AND
-    _dataType_key = 7;
+
+
