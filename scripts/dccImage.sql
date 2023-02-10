@@ -34,15 +34,7 @@ WHERE
     _LineStatus_key = 13  -- i.e. KOMP completed
         AND _ProcedureDefinitionVersion_key IN (231 , 233, 275)  -- SHIRPA, EYE, EKG
 ORDER BY ProcedureDefinition.ExternalID , StockNumber;
--- IMPC Parameter codes of outputs that are files.
-SELECT
-    DISTINCT ExternalID AS ImpcCode
-FROM
-    rslims.Output
-WHERE
-ExternalID IS NOT NULL AND
-CHAR_LENGTH(ExternalID) > 0 AND
-    _dataType_key = 7;  -- File type
+
 
 
 

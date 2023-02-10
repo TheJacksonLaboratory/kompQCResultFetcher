@@ -6,26 +6,23 @@
 import configparser
 import os
 import json
+import random
+import sys
 from logging.handlers import RotatingFileHandler
 
 import requests
 from sqlalchemy import create_engine, text
 import numpy as np
 import pandas as pd
+import time
 import logging
 import mysql.connector
 from mysql.connector import errorcode
 from sqlalchemy.exc import SQLAlchemyError
-import src.FetchIMPC.IMPC as impc
-import src.FetchEBI.EBI as ebi
 
-"""
-Overall design:
-1. Query database for animal/file information uploaded to DCC
-2. Get data relate to the resulting animal and retrieve data
-3. Search for animal with status: "Fail"
-4. Generate a human-readable report and deliver to technician 
-"""
+import dccImage
+import urllib3, socket
+from urllib3.connection import HTTPConnection
 
 outputDir = "Output"
 try:
@@ -44,8 +41,18 @@ handler = RotatingFileHandler(logging_filename, maxBytes=10000000000, backupCoun
 handler.setFormatter(logging.Formatter(FORMAT))
 logger.addHandler(handler)
 
-nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
-           "IMPC_ECG_001": "IMPC_ECG_025_001)"}
+"""
+Function to list of JR nubers into n parts randomly
+@param:
+    colonyIds: List of JR numbers
+    n: size of partitioned list
+"""
+
+
+def partition(colonyIds, n):
+    random.shuffle(colonyIds)
+    return [colonyIds[i::n] for i in range(n)]
+
 
 """
 Function to connect to database schema
@@ -136,62 +143,6 @@ def queryColonyId(conn, sql) -> list:
 
 
 """
-Function to traverse the url dictionary and retrieve data from the urls
-@:param
-    urlMap: dictionary that stores urls corresponding to the given test code 
-"""
-
-
-def BFS(urlMap) -> None:
-    if not urlMap:
-        return
-
-    testCodes = urlMap.keys()
-    dataset = []
-    # fileName = "data.json"
-    for key in testCodes:
-        for url in urlMap[key]:
-            print(url)
-            try:
-                response = requests.get(url)
-                payload = response.json()
-                """
-                with open(fileName, 'w') as fp:
-                    json.dump(payload, fp)
-                """
-                for dict_ in payload:
-                    df = pd.Series(dict_).to_frame()
-                    df = df.transpose()
-                    dataset.append(df)
-                    """
-                    data = pd.DataFrame.from_records(payload)
-                    print(data.size)
-                    dataset.append(data)
-                    print(dataset)
-                    """
-                logger.debug("Number of records found:{num}".format(num=len(dataset)))
-
-            except requests.exceptions.RequestException as err1:
-                logger.warning(err1)
-
-            except requests.exceptions.HTTPError as err2:
-                logger.warning(err2)
-
-            except requests.exceptions.ConnectionError as err3:
-                logger.warning(err3)
-
-            except requests.exceptions.Timeout as err4:
-                logger.warning(err4)
-
-        # Insert data into database
-
-    fName = "test.csv"
-    df = pd.concat(dataset)
-    df.to_csv(outputDir + "/" + fName)
-    #insert_to_db(df, key)
-
-
-"""
 Function to store data into database
 @:parameter
     testCode -> impcTestCode
@@ -201,12 +152,19 @@ Function to store data into database
 """
 
 
-def insert_to_db(df, tableName):
+def insert_to_db(dataset, tableName):
+    """
+    insertStmt = "INSERT INTO komp.dccQualityIssues (AnimalName, Taskname, TaskInstanceKey, ImpcCode, StockNumber, DateDue, Issue) VALUES ( '{0}','{1}',{2},'{3}','{4}','{5}','{6}')". \
+        format(msg['AnimalName'], msg['TaskName'], int(msg['TaskInstanceKey']), msg['ImpcCode'], msg['StockNumber'],
+               msg['DateDue'], msg['Issue'].replace("'", "\""))
+    """
     config = configparser.ConfigParser()
     config.read('db_init.INI')
     password = config.get("section_a", "Password")
     host = config.get("section_a", "Port")
     database = config.get("section_a", "Database")
+    df = pd.concat(dataset)
+    df.reset_index(inplace=True)
 
     try:
         engine = create_engine("mysql+mysqlconnector://root:{0}@{1}/{2}".
@@ -217,10 +175,32 @@ def insert_to_db(df, tableName):
 
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
-        logger.warning("Error message: {error}".format(error=error))
+        logger.error("Error message: {error}".format(error=error))
+
+
+"""
+Input a .txt file, with animalId/parameterCode/colonyId on each line.
+1. If the line is a colonyId -> query by JR number
+2. If the line is an animalId -> query by animal id
+3. If the line is 
+"""
 
 
 def main():
+    filePtr = sys.argv[1]
+    with open(filePtr, "r") as f:
+        lines = f.readlines()
+
+    print(lines)
+
+    """Set higher timeout"""
+
+    HTTPConnection.default_socket_options = (
+            HTTPConnection.default_socket_options + [
+        (socket.SOL_SOCKET, socket.SO_SNDBUF, 1000000),
+        (socket.SOL_SOCKET, socket.SO_RCVBUF, 1000000)
+    ])
+
     """Setup Database connection"""
     conn_to_rslims = init("rslims")
     conn_to_komp = init("komp")
@@ -234,22 +214,17 @@ def main():
 
     # Query database
     parameterKeys = queryParameterKey(conn_to_rslims, commands[0], imageType="IMPC")
+    print(len(parameterKeys))
+    logger.debug("Number of impc test codes is {size}".format(size=len(parameterKeys)))
     colonyIds = queryColonyId(conn_to_rslims, commands[1])
-
-    urlMap = {i: [] for i in parameterKeys}
-    for colonyId in colonyIds:
-        logger.info(f"JR number is :{colonyId}")
-
-        impcImage = impc.impcInfo(colonyId, urlMap)
-        impcImage.generateURL(0, 50, impcImage, parameterKeys)
-        BFS(impcImage.urlMap)
+    logger.debug("Number of JR number is {size}".format(size=len(colonyIds)))
 
     """
-    with open('urls.txt', 'w') as convert_file:
-        convert_file.write(json.dumps(urlMap))
+    newImage = dccImage.impcInfo("", "", "IMPC_EYE_050_001", "test")
+    df = newImage.queryByParameterKey()
+    df.to_csv("test.csv")
     """
 
-    # BFS(urlMap)
     """Close the connection"""
     conn_to_komp.close()
     conn_to_rslims.close()
