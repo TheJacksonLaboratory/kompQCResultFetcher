@@ -3,28 +3,24 @@
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
-import configparser
 import os
-import json
 import random
 import sys
 from logging.handlers import RotatingFileHandler
 
-import requests
-from sqlalchemy import create_engine, text
-import numpy as np
+from sqlalchemy import create_engine
 import pandas as pd
-import time
 import logging
 import mysql.connector
 from mysql.connector import errorcode
 from sqlalchemy.exc import SQLAlchemyError
-
-import dccImage
-import urllib3, socket
+import socket
 from urllib3.connection import HTTPConnection
+from dccImage.dccImage import impcInfo
+import Config as Config
 
-outputDir = "Output"
+outputDir = "/Users/chent/Desktop/KOMP_Project/FetchQCResult/docs/Output"
+
 try:
     os.mkdir(outputDir)
 
@@ -36,10 +32,11 @@ except FileExistsError as e:
 logger = logging.getLogger(__name__)
 FORMAT = "[%(asctime)s->%(filename)s->%(funcName)s():%(lineno)s]%(levelname)s: %(message)s"
 logging.basicConfig(format=FORMAT, filemode="w", level=logging.DEBUG, force=True)
-logging_filename = outputDir + "/" + 'App.log'
+logging_filename = outputDir + "/" + 'Models.log'
 handler = RotatingFileHandler(logging_filename, maxBytes=10000000000, backupCount=10)
 handler.setFormatter(logging.Formatter(FORMAT))
 logger.addHandler(handler)
+
 
 """
 Function to list of JR nubers into n parts randomly
@@ -62,11 +59,10 @@ Function to connect to database schema
 
 
 def init(schema) -> mysql.connector:
-    config = configparser.ConfigParser()
-    config.read('db.ini')
-    user = config.get("section_a", "User")
-    password = config.get("section_a", "Password")
-    host = config.get("section_a", "Port")
+
+    user = Config.User
+    password = Config.Password
+    host = Config.Port
 
     try:
         conn = mysql.connector.connect(host=host, user=user, password=password, database=schema)
@@ -75,17 +71,19 @@ def init(schema) -> mysql.connector:
 
     except mysql.connector.Error as err1:
         if err1.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Something is wrong with your user name or password")
+            logger.error("Wrong user name or password passed")
 
         elif err1.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database does not exist")
+            logger.error("No such schema")
 
         else:
-            print(err1)
+            error = str(err1.__dict__["orig"])
+            logger.error("Error message: {error}".format(error=error))
 
     except ConnectionError as err2:
-        print("Unable to connect to DB due to" + err2.strerror)
-        print()
+        logger.error("Unable to return connect to database due to" + err2.strerror)
+
+    return None
 
 
 """
@@ -143,6 +141,24 @@ def queryColonyId(conn, sql) -> list:
 
 
 """
+   Recursive function to find last page of 
+   Pseudo Code:
+       if payload["total"] == 0
+           return (0, 0)
+
+       else if payload["total"] < size:
+           return (start, size)
+
+       else:
+           return findLastPage(size + 1, size*(multiplier + 1))
+   """
+
+
+def getLastPage(colonyId) -> tuple:
+    pass
+
+
+"""
 Function to store data into database
 @:parameter
     testCode -> impcTestCode
@@ -158,13 +174,14 @@ def insert_to_db(dataset, tableName):
         format(msg['AnimalName'], msg['TaskName'], int(msg['TaskInstanceKey']), msg['ImpcCode'], msg['StockNumber'],
                msg['DateDue'], msg['Issue'].replace("'", "\""))
     """
-    config = configparser.ConfigParser()
-    config.read('db_init.INI')
-    password = config.get("section_a", "Password")
-    host = config.get("section_a", "Port")
-    database = config.get("section_a", "Database")
+    user = Config.User
+    password = Config.Password
+    host = Config.Port
+    database = Config.Database
+
     df = pd.concat(dataset)
     df.reset_index(inplace=True)
+    df.drop("procedureKey", inplace=True)
 
     try:
         engine = create_engine("mysql+mysqlconnector://root:{0}@{1}/{2}".
@@ -187,14 +204,8 @@ Input a .txt file, with animalId/parameterCode/colonyId on each line.
 
 
 def main():
-    filePtr = sys.argv[1]
-    with open(filePtr, "r") as f:
-        lines = f.readlines()
-
-    print(lines)
 
     """Set higher timeout"""
-
     HTTPConnection.default_socket_options = (
             HTTPConnection.default_socket_options + [
         (socket.SOL_SOCKET, socket.SO_SNDBUF, 1000000),
@@ -205,7 +216,7 @@ def main():
     conn_to_rslims = init("rslims")
     conn_to_komp = init("komp")
 
-    """Read sql script"""
+    """"Read sql script"""
     here = os.path.dirname(os.path.abspath(__file__))
     sqlFile = os.path.join(here, 'dccImage.sql')
     fptr = open(sqlFile, "r")
@@ -219,11 +230,24 @@ def main():
     colonyIds = queryColonyId(conn_to_rslims, commands[1])
     logger.debug("Number of JR number is {size}".format(size=len(colonyIds)))
 
-    """
-    newImage = dccImage.impcInfo("", "", "IMPC_EYE_050_001", "test")
-    df = newImage.queryByParameterKey()
-    df.to_csv("test.csv")
-    """
+    #newImage = impcInfo("", "", "IMPC_EYE_050_001", "test")
+
+    filePtr = sys.argv[1]
+    with open(filePtr, "r") as f:
+        lines = f.readlines()
+
+    print(lines)
+
+    if len(lines) == 1:
+        line = lines[0].split(":")
+        logger.debug(f"Reading {line}")
+
+        if line[0] == "Parameter Key":
+
+            newImage = impcInfo("", "", "IMPC_EYE_050_001", "test")
+            #print(newImage.parameterKey)
+            result = newImage.getByParameterKey()
+            insert_to_db(result, "dccimages")
 
     """Close the connection"""
     conn_to_komp.close()

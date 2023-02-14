@@ -1,26 +1,10 @@
 import logging
 import os
+import sys
 from logging.handlers import RotatingFileHandler
 import pandas as pd
 import requests
-
-
-"""Setup logger"""
-
-outputDir = "Output"
-try:
-    os.mkdir(outputDir)
-
-except FileExistsError as e:
-    print("File exists")
-
-logger = logging.getLogger(__name__)
-FORMAT = "[%(asctime)s->%(filename)s->%(funcName)s():%(lineno)s]%(levelname)s: %(message)s"
-logging.basicConfig(format=FORMAT, filemode="w", level=logging.DEBUG, force=True)
-logging_filename = 'App.log'
-handler = RotatingFileHandler(logging_filename, maxBytes=100000000, backupCount=10)
-handler.setFormatter(logging.Formatter(FORMAT))
-logger.addHandler(handler)
+from urllib.parse import urlencode, urlunsplit, quote_plus
 
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
@@ -29,51 +13,47 @@ EBI_URL_Template = "https://www.ebi.ac.uk/mi/impc/solr/impc_images/select" \
                    "?q=parameter_stable_id:%20IMPC_EYE_050_001%20AND%20phenotyping_center:" \
                    "JAX&wt=json&indent=true&start=401&rows=200"
 
-
-# result = pd.DataFrame.from_records(urlMap)
-# result.to_csv("urls.txt")
-
-
 class imageInfo:
 
-    def __init__(self, colonyId, animalId, parameterCode):
+    def __init__(self, colonyId, animalId, parameterKey):
         self.colonyId = colonyId
         self.animalId = animalId
-        self.parameterCode = parameterCode
+        self.parameterKey = parameterKey
 
 
 class impcInfo(imageInfo):
-    DCC_URL_Template = "https://api.mousephenotype.org/media/J?start={start}&resultsize={size}"
-    animalIdTemplate = "https://api.mousephenotype.org/media/J?parameterKey={parameterCode}&animalName={" \
-                       "mouseId}&start={start}&resultsize={size}"
-    colonyIdTemplate = "https://api.mousephenotype.org/media/J?genotype={JRNumber}&start={start}&resultsize={size}"
-    parameterKeyTemplate = "https://api.mousephenotype.org/media/J?parameterKey={parameterCode}"
     nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
                "IMPC_ECG_001": "IMPC_ECG_025_001"}
 
-    baseURL = ""
+    filters = ["parameterKey", "genotype", "start", "resultsize"]
+
     """
     @attribute
         tableName: Table in the schema to be insert
     """
 
-    def __init__(self, colonyId, animalId, parameterCode, tableName):
-        super().__init__(colonyId, animalId, parameterCode)
+    def __init__(self, colonyId, animalId, parameterKey, tableName):
+        super().__init__(colonyId, animalId, parameterKey)
         self.tableName = tableName
 
-    def generateURL(self, start, size):
+    """
+    Function to generate desired query url 
+    @:param
+    filter: type of filter you want to add to url
+    *args: 
+    """
 
-        parameterCodes = []
-        for key in nameMap.keys():
-            parameterCodes.append(nameMap[key])
+    def generateURL(self, *args) -> str:
 
-        # print(parameterCodes)
-        logger.info(f"Final number of parameter codes are :{len(parameterCodes)}")
-        for parameterCode in parameterCodes:
-            url = self.queryByColonyId.format(parameterKey=parameterCode, JRNumber=self.colonyId,
-                                              start=start, size=size)
-            logger.debug(f"Resulting url is :{url}")
-            self.urlList.append(url)
+        parameters = {}
+        for i in range(len(args)):
+            parameters[self.filters[i]] = args[i]
+
+        query = urlencode(query=parameters, doseq=True)
+        link = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+        print(link)
+
+        return link
 
     """
     Function to get all results related to one specific parameter key
@@ -81,15 +61,16 @@ class impcInfo(imageInfo):
         :parameterKey: DCC parameter test code, e.g. IMPC_EYE_050_001
     """
 
-    def queryByParameterKey(self) -> list:
+    def getByParameterKey(self, *args) -> list:
 
-        if not self.parameterCode or self.parameterCode not in nameMap:
-            logger.error("No such parameter key")
+        if not self.parameterKey or self.parameterKey not in self.nameMap.values():
+            print("No such parameter key")
             return []
 
         result = []
         numRecords = 0
-        url = self.parameterKeyTemplate.format(parameterCode=self.parameterCode)
+        # url = self.parameterKeyTemplate.format(parameterCode=self.parameterKey)
+        url = self.generateURL(self.parameterKey, args)
         try:
             response = requests.get(url)
             payload = response.json()
@@ -105,19 +86,19 @@ class impcInfo(imageInfo):
 
         except requests.exceptions.RequestException as err1:
             error = str(err1.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         except requests.exceptions.HTTPError as err2:
             error = str(err2.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         except requests.exceptions.ConnectionError as err3:
             error = str(err3.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         except requests.exceptions.Timeout as err4:
             error = str(err4.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         return result
 
@@ -127,14 +108,13 @@ class impcInfo(imageInfo):
         colonyId: JAX mouse colonyId
     """
 
-    def queryByColonyId(self) -> list:
+    def getByColonyId(self, *args) -> list:
 
         if not self.colonyId:
-            logger.error("No colonyId found")
+            print("No colonyId found")
             return []
 
-        (start, dest) = self.getLastPage()
-        url = self.colonyIdTemplate.format(JRNumber=self.colonyId, start=start, size=dest)
+        url = self.generateURL(self.colonyId, args)
         result = []
         try:
             response = requests.get(url)
@@ -150,19 +130,19 @@ class impcInfo(imageInfo):
 
         except requests.exceptions.RequestException as err1:
             error = str(err1.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         except requests.exceptions.HTTPError as err2:
             error = str(err2.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         except requests.exceptions.ConnectionError as err3:
             error = str(err3.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         except requests.exceptions.Timeout as err4:
             error = str(err4.__dict__["orig"])
-            logger.warning("Error message: {error}".format(error=error))
+            print(error)
 
         return result
 
@@ -172,23 +152,42 @@ class impcInfo(imageInfo):
            animalId: JAX mouse id/organism id
     """
 
-    def queryByAnimalId(self) -> pd.DataFrame:
-        pass
+    def getByAnimalId(self, *args) -> list:
+        if not self.animalId:
+            print("Invalid Input")
+            return []
 
-    """
-    Recursive function to find last page of 
-    Pseudo Code:
-        if payload["total"] == 0
-            return (0, 0)
-    
-        else if payload["total"] < size:
-            return (start, size)
-    
-        else:
-            return findLastPage(size + 1, size*(multiplier + 1))
-    """
-    def getLastPage(self) -> tuple:
-        pass
+        url = self.generateURL(self.animalId, *args)
+        result = []
+        try:
+            response = requests.get(url)
+            payload = response.json()
+            '''Data found'''
+            if payload["total"] > 0:
+                colNames = payload["mediaFiles"][0].keys()
+                for dict_ in payload["mediaFiles"]:
+                    data = pd.Series(dict_).to_frame()
+                    data = data.transpose()
+                    data.columns = colNames
+                    result.append(data)
+
+        except requests.exceptions.RequestException as err1:
+            error = str(err1.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.HTTPError as err2:
+            error = str(err2.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.ConnectionError as err3:
+            error = str(err3.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.Timeout as err4:
+            error = str(err4.__dict__["orig"])
+            print(error)
+
+        return result
 
 
 class ebiInfo(imageInfo):
