@@ -3,21 +3,23 @@
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
+import logging
 import os
 import random
+import socket
 import sys
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
-from sqlalchemy import create_engine
-import pandas as pd
-import logging
 import mysql.connector
+import pandas as pd
 from mysql.connector import errorcode
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
-import socket
 from urllib3.connection import HTTPConnection
-from dccImage.dccImage import impcInfo
+
 import Config as Config
+from dccImage.dccImage import impcInfo
 
 outputDir = "/Users/chent/Desktop/KOMP_Project/FetchQCResult/docs/Output"
 
@@ -36,7 +38,6 @@ logging_filename = outputDir + "/" + 'Models.log'
 handler = RotatingFileHandler(logging_filename, maxBytes=10000000000, backupCount=10)
 handler.setFormatter(logging.Formatter(FORMAT))
 logger.addHandler(handler)
-
 
 """
 Function to list of JR nubers into n parts randomly
@@ -59,13 +60,12 @@ Function to connect to database schema
 
 
 def init(schema) -> mysql.connector:
-
-    user = Config.User
-    password = Config.Password
-    host = Config.Port
+    User = Config.User
+    Password = Config.Password
+    Host = Config.Port
 
     try:
-        conn = mysql.connector.connect(host=host, user=user, password=password, database=schema)
+        conn = mysql.connector.connect(host=Host, user=User, password=Password, database=schema)
         logger.info(f"Successfully connected to {schema}")
         return conn
 
@@ -180,15 +180,34 @@ def insert_to_db(dataset, tableName):
     database = Config.Database
 
     df = pd.concat(dataset)
-    df.reset_index(inplace=True)
-    df.drop("procedureKey", inplace=True)
-
+    df.drop("procedureKey", axis = 1, inplace=True)
+    currTime = [datetime.now() for i in range(len(df.index))]
+    insertData = df.copy()
+    insertData["modifiedTime"] = pd.Series(currTime).values
+    print(insertData.iloc[2552])
+    print(list(insertData.columns))
     try:
-        engine = create_engine("mysql+mysqlconnector://root:{0}@{1}/{2}".
-                               format(password, host, database),
+        # Use dba instead of root
+        engine = create_engine("mysql+mysqlconnector://{0}:{1}@{2}/{3}".
+                               format(user, password, host, database),
                                pool_recycle=1, pool_timeout=57600,
                                future=True)
-        df.to_sql(tableName, engine, if_exists='append', index=False)
+
+        with engine.connect() as conn:
+            logger.debug("Getting the column names")
+            keys = conn.execute(text("SELECT * FROM komp.dccImages;")).keys()
+
+        #print(keys)
+        insertData.columns = keys
+        print(insertData)
+        insertData.to_sql(tableName, engine, if_exists='append', index=False)
+        insertionResult = engine.connect().execute(text("SELECT * FROM komp.dccImages;"))
+        logger.debug(f"Insertion result is:{insertionResult}")
+        result = engine.connect().execute(text("SELECT * FROM dccImages;"))
+        if result.all():
+            logger.info("Data successfully inserted!")
+        else:
+            logger.debug("No record found, please check your dataframe")
 
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
@@ -204,10 +223,8 @@ Input a .txt file, with animalId/parameterCode/colonyId on each line.
 
 
 def main():
-
     """Set higher timeout"""
-    HTTPConnection.default_socket_options = (
-            HTTPConnection.default_socket_options + [
+    HTTPConnection.default_socket_options = (HTTPConnection.default_socket_options + [
         (socket.SOL_SOCKET, socket.SO_SNDBUF, 1000000),
         (socket.SOL_SOCKET, socket.SO_RCVBUF, 1000000)
     ])
@@ -224,14 +241,19 @@ def main():
     commands = sqlFile.split(";")
 
     # Query database
-    parameterKeys = queryParameterKey(conn_to_rslims, commands[0], imageType="IMPC")
+    parameterKeys = queryParameterKey(conn_to_rslims, commands[1], imageType="IMPC")
     print(len(parameterKeys))
     logger.debug("Number of impc test codes is {size}".format(size=len(parameterKeys)))
-    colonyIds = queryColonyId(conn_to_rslims, commands[1])
+    colonyIds = queryColonyId(conn_to_rslims, commands[2])
     logger.debug("Number of JR number is {size}".format(size=len(colonyIds)))
+    """
+    for parameterKey in parameterKeys:
+        print(parameterKey)
+        newImage = impcInfo("", "", parameterKey, "komp.dccimages")
+        result = newImage.getByParameterKey()
+        insert_to_db(result, "dccimages")
 
-    #newImage = impcInfo("", "", "IMPC_EYE_050_001", "test")
-
+    """
     filePtr = sys.argv[1]
     with open(filePtr, "r") as f:
         lines = f.readlines()
@@ -243,13 +265,12 @@ def main():
         logger.debug(f"Reading {line}")
 
         if line[0] == "Parameter Key":
-
             newImage = impcInfo("", "", "IMPC_EYE_050_001", "test")
             #print(newImage.parameterKey)
             result = newImage.getByParameterKey()
             insert_to_db(result, "dccimages")
 
-    """Close the connection"""
+    #Close the connection
     conn_to_komp.close()
     conn_to_rslims.close()
 

@@ -63,7 +63,7 @@ class impcInfo(imageInfo):
 
     def getByParameterKey(self, *args) -> list:
 
-        if not self.parameterKey or self.parameterKey not in self.nameMap.values():
+        if not self.parameterKey:
             print("No such parameter key")
             return []
 
