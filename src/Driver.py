@@ -179,12 +179,16 @@ def insert_to_db(dataset, tableName):
     host = Config.Port
     database = Config.Database
 
+    if not dataset:
+        logger.warning("No record retrieved!")
+        return
+
     df = pd.concat(dataset)
     df.drop("procedureKey", axis = 1, inplace=True)
     currTime = [datetime.now() for i in range(len(df.index))]
     insertData = df.copy()
     insertData["modifiedTime"] = pd.Series(currTime).values
-    print(insertData.iloc[2552])
+    #print(insertData.iloc[2552])
     print(list(insertData.columns))
     try:
         # Use dba instead of root
@@ -260,14 +264,13 @@ def main():
 
     print(lines)
 
-    if len(lines) == 1:
-        line = lines[0].split(":")
+    for line in lines:
+        line = line.split(":")
         logger.debug(f"Reading {line}")
-
         if line[0] == "Parameter Key":
-            newImage = impcInfo("", "", "IMPC_EYE_050_001", "test")
-            #print(newImage.parameterKey)
-            result = newImage.getByParameterKey()
+            newImage = impcInfo("", "", line[1].strip(), "test")
+            result = newImage.getByParameterKey("", "", 0, sys.maxsize)
+            logger.debug("Number of records found:{len(result)}")
             insert_to_db(result, "dccimages")
 
     #Close the connection

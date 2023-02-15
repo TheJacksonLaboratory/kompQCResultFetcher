@@ -1,10 +1,7 @@
-import logging
-import os
-import sys
-from logging.handlers import RotatingFileHandler
+from urllib.parse import urlencode, urlunsplit
+
 import pandas as pd
 import requests
-from urllib.parse import urlencode, urlunsplit, quote_plus
 
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
@@ -12,6 +9,7 @@ nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001
 EBI_URL_Template = "https://www.ebi.ac.uk/mi/impc/solr/impc_images/select" \
                    "?q=parameter_stable_id:%20IMPC_EYE_050_001%20AND%20phenotyping_center:" \
                    "JAX&wt=json&indent=true&start=401&rows=200"
+
 
 class imageInfo:
 
@@ -22,9 +20,6 @@ class imageInfo:
 
 
 class impcInfo(imageInfo):
-    nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
-               "IMPC_ECG_001": "IMPC_ECG_025_001"}
-
     filters = ["parameterKey", "genotype", "start", "resultsize"]
 
     """
@@ -36,24 +31,6 @@ class impcInfo(imageInfo):
         super().__init__(colonyId, animalId, parameterKey)
         self.tableName = tableName
 
-    """
-    Function to generate desired query url 
-    @:param
-    filter: type of filter you want to add to url
-    *args: 
-    """
-
-    def generateURL(self, *args) -> str:
-
-        parameters = {}
-        for i in range(len(args)):
-            parameters[self.filters[i]] = args[i]
-
-        query = urlencode(query=parameters, doseq=True)
-        link = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
-        print(link)
-
-        return link
 
     """
     Function to get all results related to one specific parameter key
@@ -68,15 +45,26 @@ class impcInfo(imageInfo):
             return []
 
         result = []
-        numRecords = 0
-        # url = self.parameterKeyTemplate.format(parameterCode=self.parameterKey)
-        url = self.generateURL(self.parameterKey, args)
+
+        """Generate the url"""
+        parameters = {"parameterKey": self.parameterKey}
+        for i in range(len(args)):
+            if args[i] == "":
+                print(args[i])
+                continue
+            parameters[self.filters[i]] = args[i]
+
+        print(parameters)
+        query = urlencode(query=parameters, doseq=True)
+        url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+        print(url)
+
+        """Get data back from impc"""
         try:
             response = requests.get(url)
             payload = response.json()
             '''Data found'''
             if payload["total"] > 0:
-                numRecords += payload["total"]
                 colNames = payload["mediaFiles"][0].keys()
                 for dict_ in payload["mediaFiles"]:
                     data = pd.Series(dict_).to_frame()
@@ -84,20 +72,20 @@ class impcInfo(imageInfo):
                     data.columns = colNames
                     result.append(data)
 
-        except requests.exceptions.RequestException as err1:
-            error = str(err1.__dict__["orig"])
+        except requests.exceptions.ConnectionError as err3:
+            error = str(err3.__dict__["orig"])
             print(error)
 
         except requests.exceptions.HTTPError as err2:
             error = str(err2.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.ConnectionError as err3:
-            error = str(err3.__dict__["orig"])
-            print(error)
-
         except requests.exceptions.Timeout as err4:
             error = str(err4.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.RequestException as err1:
+            error = str(err1.__dict__["orig"])
             print(error)
 
         return result
@@ -114,8 +102,19 @@ class impcInfo(imageInfo):
             print("No colonyId found")
             return []
 
-        url = self.generateURL(self.colonyId, args)
         result = []
+        """Generate the url"""
+        parameters = {"genotype": self.colonyId}
+        for i in range(len(args)):
+            if args[i] == "":
+                print(args[i])
+                continue
+            parameters[self.filters[i]] = args[i]
+
+        print(parameters)
+        query = urlencode(query=parameters, doseq=True)
+        url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+        print(url)
         try:
             response = requests.get(url)
             payload = response.json()
@@ -128,10 +127,6 @@ class impcInfo(imageInfo):
                     data.columns = colNames
                     result.append(data)
 
-        except requests.exceptions.RequestException as err1:
-            error = str(err1.__dict__["orig"])
-            print(error)
-
         except requests.exceptions.HTTPError as err2:
             error = str(err2.__dict__["orig"])
             print(error)
@@ -142,6 +137,10 @@ class impcInfo(imageInfo):
 
         except requests.exceptions.Timeout as err4:
             error = str(err4.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.RequestException as err1:
+            error = str(err1.__dict__["orig"])
             print(error)
 
         return result
@@ -157,7 +156,19 @@ class impcInfo(imageInfo):
             print("Invalid Input")
             return []
 
-        url = self.generateURL(self.animalId, *args)
+        """Generate the url"""
+        parameters = {"animalName": self.animalId}
+        for i in range(len(args)):
+            if args[i] == "":
+                print(args[i])
+                continue
+            parameters[self.filters[i]] = args[i]
+
+        print(parameters)
+        query = urlencode(query=parameters, doseq=True)
+        url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+        print(url)
+
         result = []
         try:
             response = requests.get(url)
@@ -171,10 +182,6 @@ class impcInfo(imageInfo):
                     data.columns = colNames
                     result.append(data)
 
-        except requests.exceptions.RequestException as err1:
-            error = str(err1.__dict__["orig"])
-            print(error)
-
         except requests.exceptions.HTTPError as err2:
             error = str(err2.__dict__["orig"])
             print(error)
@@ -185,6 +192,10 @@ class impcInfo(imageInfo):
 
         except requests.exceptions.Timeout as err4:
             error = str(err4.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.RequestException as err1:
+            error = str(err1.__dict__["orig"])
             print(error)
 
         return result
