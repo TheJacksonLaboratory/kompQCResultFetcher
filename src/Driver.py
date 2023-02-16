@@ -19,9 +19,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from urllib3.connection import HTTPConnection
 
 import Config as Config
-from dccImage.dccImage import impcInfo
+from dccImage.dccImage import impcInfo, ebiInfo
 
-outputDir = "/Users/chent/Desktop/KOMP_Project/FetchQCResult/docs/Output"
+outputDir = "/Users/chent/Desktop/KOMP_Project/FetchDCCResult/docs/Output"
 
 try:
     os.mkdir(outputDir)
@@ -184,11 +184,11 @@ def insert_to_db(dataset, tableName):
         return
 
     df = pd.concat(dataset)
-    df.drop("procedureKey", axis = 1, inplace=True)
+    df.drop("procedureKey", axis=1, inplace=True)
     currTime = [datetime.now() for i in range(len(df.index))]
     insertData = df.copy()
     insertData["modifiedTime"] = pd.Series(currTime).values
-    #print(insertData.iloc[2552])
+    # print(insertData.iloc[2552])
     print(list(insertData.columns))
     try:
         # Use dba instead of root
@@ -201,7 +201,7 @@ def insert_to_db(dataset, tableName):
             logger.debug("Getting the column names")
             keys = conn.execute(text("SELECT * FROM komp.dccImages;")).keys()
 
-        #print(keys)
+        # print(keys)
         insertData.columns = keys
         print(insertData)
         insertData.to_sql(tableName, engine, if_exists='append', index=False)
@@ -258,22 +258,55 @@ def main():
         insert_to_db(result, "dccimages")
 
     """
-    filePtr = sys.argv[1]
-    with open(filePtr, "r") as f:
-        lines = f.readlines()
 
-    print(lines)
+    """
+    argv[1], argv[2]: (website name, file name)
+    -e -> EBI
+    -i -> IMPC
+    """
+    if sys.argv[1] == "-e":
 
-    for line in lines:
-        line = line.split(":")
-        logger.debug(f"Reading {line}")
-        if line[0] == "Parameter Key":
-            newImage = impcInfo("", "", line[1].strip(), "test")
-            result = newImage.getByParameterKey("", "", 0, sys.maxsize)
-            logger.debug("Number of records found:{len(result)}")
-            insert_to_db(result, "dccimages")
+        filePtr = sys.argv[2]
+        with open(filePtr, "r") as f:
+            lines = f.readlines()
 
-    #Close the connection
+        print(lines)
+
+        for line in lines:
+            line = line.split(":")
+            logger.debug(f"Reading {line}")
+            if line[0] == "Parameter Key":
+                # newImage = impcInfo("", "", line[1].strip(), "test")
+                newImage = ebiInfo("", "", line[1].strip(), "test")
+                result = newImage.getByParameterKey(0, 2 ** 31 - 1)
+                # print(result)
+                # df = pd.concat(result)
+                # df.to_csv("demo.csv")
+                logger.debug("Number of records found:{size}".format(size=len(result)))
+                insert_to_db(result, "ebiimages")
+
+    elif sys.argv[1] == "-i":
+        filePtr = sys.argv[2]
+        with open(filePtr, "r") as f:
+            lines = f.readlines()
+
+        print(lines)
+
+        for line in lines:
+            line = line.split(":")
+            logger.debug(f"Reading {line}")
+            if line[0] == "Parameter Key":
+                newImage = impcInfo("", "", line[1].strip(), "test")
+                # newImage = ebiInfo("", "", line[1].strip(), "test")
+                result = newImage.getByParameterKey(0, 2 ** 31 - 1)
+                # print(result)
+                logger.debug("Number of records found:{size}".format(size=len(result)))
+                insert_to_db(result, "dccimages")
+
+    else:
+        logger.warning("Illegal input argument detected")
+
+    # Close the connection
     conn_to_komp.close()
     conn_to_rslims.close()
 

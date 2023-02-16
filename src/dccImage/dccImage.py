@@ -6,10 +6,6 @@ import requests
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
 
-EBI_URL_Template = "https://www.ebi.ac.uk/mi/impc/solr/impc_images/select" \
-                   "?q=parameter_stable_id:%20IMPC_EYE_050_001%20AND%20phenotyping_center:" \
-                   "JAX&wt=json&indent=true&start=401&rows=200"
-
 
 class imageInfo:
 
@@ -30,7 +26,6 @@ class impcInfo(imageInfo):
     def __init__(self, colonyId, animalId, parameterKey, tableName):
         super().__init__(colonyId, animalId, parameterKey)
         self.tableName = tableName
-
 
     """
     Function to get all results related to one specific parameter key
@@ -72,20 +67,20 @@ class impcInfo(imageInfo):
                     data.columns = colNames
                     result.append(data)
 
-        except requests.exceptions.ConnectionError as err3:
-            error = str(err3.__dict__["orig"])
+        except requests.exceptions.HTTPError as err1:
+            error = str(err1.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.HTTPError as err2:
+        except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.Timeout as err4:
-            error = str(err4.__dict__["orig"])
+        except requests.exceptions.Timeout as err3:
+            error = str(err3.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.RequestException as err1:
-            error = str(err1.__dict__["orig"])
+        except requests.exceptions.RequestException as err4:
+            error = str(err4.__dict__["orig"])
             print(error)
 
         return result
@@ -127,20 +122,20 @@ class impcInfo(imageInfo):
                     data.columns = colNames
                     result.append(data)
 
-        except requests.exceptions.HTTPError as err2:
+        except requests.exceptions.HTTPError as err1:
+            error = str(err1.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.ConnectionError as err3:
+        except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.Timeout as err4:
+        except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
-            print(error)
-
-        except requests.exceptions.RequestException as err1:
-            error = str(err1.__dict__["orig"])
             print(error)
 
         return result
@@ -182,27 +177,27 @@ class impcInfo(imageInfo):
                     data.columns = colNames
                     result.append(data)
 
-        except requests.exceptions.HTTPError as err2:
+        except requests.exceptions.HTTPError as err1:
+            error = str(err1.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.ConnectionError as err3:
+        except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
             print(error)
 
-        except requests.exceptions.Timeout as err4:
+        except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
-            print(error)
-
-        except requests.exceptions.RequestException as err1:
-            error = str(err1.__dict__["orig"])
             print(error)
 
         return result
 
 
 class ebiInfo(imageInfo):
-    '''
+    """
     EBI images table mapping
     Symbol => allele_symbol
     AnimalID => external_sample_id
@@ -213,8 +208,13 @@ class ebiInfo(imageInfo):
     DownLoadFilePath = download_url
     JPEG = jpeg_url
     ExperimentName = experiment_source_id
-    '''
-
+    """
+    filters = ["parameterKey", "genotype", "start", "rows"]
+    EBI_URL_Template = "https://www.ebi.ac.uk/mi/impc/solr/impc_images/select?q=parameter_stable_id" \
+                       ":%20{parameterKey}%20AND%20phenotyping_center:JAX&wt=json&indent=true&start=" \
+                       "{start}&rows={dest}"
+    keys = {"parameter_stable_id", "date_of_birth", "external_sample_id", "allele_symbol",
+            "download_url", "jpeg_url", "experiment_source_id", "colony_id", "sex"}
     """
        @attribute
            tableName: Table in the schema to be insert
@@ -224,5 +224,101 @@ class ebiInfo(imageInfo):
         super().__init__(colonyId, animalId, parameterCode)
         self.tableName = tableName
 
-    def mapping(self, parameterKeys):
+
+    """
+        Function to get all results related to one specific parameter key
+        @:param
+            :parameterKey: DCC parameter test code, e.g. IMPC_EYE_050_001
+    """
+
+    def getByParameterKey(self, *args) -> list:
+
+        if not self.parameterKey:
+            print("No such parameter key")
+            return []
+
+        url = self.EBI_URL_Template.format(parameterKey=self.parameterKey, start=args[0], dest=args[1])
+        print(url)
+        result = []
+        try:
+            payload = {}
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': 'Basic c3ZjLWxpbXNkYkBqYXgub3JnOnZBJmNlMyhST3pBTA=='
+            }
+            response = requests.request("GET", url, headers=headers, data=payload)
+            data = response.json()
+            self.BFS(data["response"]["docs"], result)
+
+        except requests.exceptions.HTTPError as err1:
+            error = str(err1.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.ConnectionError as err2:
+            error = str(err2.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.Timeout as err3:
+            error = str(err3.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.RequestException as err4:
+            error = str(err4.__dict__["orig"])
+            print(error)
+
+        print(result)
+        return result
+
+    """
+    Function to get all results related to one specific colonyId
+    @:param
+        colonyId: JAX mouse colonyId
+    """
+
+    def getByColonyId(self, *args) -> list:
         pass
+
+    """
+    Function to get all results related to one specific mouse
+    @:param
+        animalId: JAX mouse id/organism id
+    """
+
+    def getByOrg(self, *args) -> list:
+        pass
+
+    """
+    Function to traverse nested json object
+    @:param
+    graph: Nested json object 
+    """
+
+    def BFS(self, graph, result):
+
+        if not graph:
+            print("Empty Json Object!")
+            return
+        print(graph)
+        for g in graph:
+            tempDict_ = {}
+            for node in g.keys():
+                print(g[node])
+
+                """Ignore the metadata"""
+                if isinstance(g[node], list):
+                    continue
+                """
+                If we found a match with keys, add it to the temp dict
+                """
+                if node in self.keys:
+                    tempDict_[node] = g[node]
+
+            data = pd.Series(tempDict_).to_frame()
+            data = data.transpose()
+            result.append(data)
+
+
+
+
+
+
