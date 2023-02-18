@@ -1,4 +1,4 @@
-from src.dccImage.dccImage import *
+from src.Model.dccImage import *
 import pytest
 
 def testURL():

@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import urlencode, urlunsplit
 
 import pandas as pd
@@ -6,6 +7,7 @@ import requests
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
 
+logging.getLogger('dccImage').addHandler(logging.NullHandler())
 
 class imageInfo:
 
@@ -45,13 +47,14 @@ class impcInfo(imageInfo):
         parameters = {"parameterKey": self.parameterKey}
         for i in range(len(args)):
             if args[i] == "":
-                print(args[i])
+                #print(args[i])
                 continue
             parameters[self.filters[i]] = args[i]
 
-        print(parameters)
+        #print(parameters)
         query = urlencode(query=parameters, doseq=True)
         url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+        logging.debug(f"URL generated is:{url}")
         print(url)
 
         """Get data back from impc"""
@@ -69,6 +72,7 @@ class impcInfo(imageInfo):
 
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
+            logging.warning(error)
             print(error)
 
         except requests.exceptions.ConnectionError as err2:
@@ -213,8 +217,12 @@ class ebiInfo(imageInfo):
     EBI_URL_Template = "https://www.ebi.ac.uk/mi/impc/solr/impc_images/select?q=parameter_stable_id" \
                        ":%20{parameterKey}%20AND%20phenotyping_center:JAX&wt=json&indent=true&start=" \
                        "{start}&rows={dest}"
-    keys = {"parameter_stable_id", "date_of_birth", "external_sample_id", "allele_symbol",
-            "download_url", "jpeg_url", "experiment_source_id", "colony_id", "sex"}
+
+    keys = {"parameter_stable_id": "ImpcCode", "date_of_birth": "DOB",
+            "external_sample_id": "AnimalID", "allele_symbol": "Symbol",
+            "download_url": "DownLoadFilePath", "jpeg_url": "JPEG",
+            "experiment_source_id": "ExperimentName",
+            "colony_id": "JR", "sex": "Sex"}
     """
        @attribute
            tableName: Table in the schema to be insert
@@ -223,7 +231,6 @@ class ebiInfo(imageInfo):
     def __init__(self, colonyId, animalId, parameterCode, tableName):
         super().__init__(colonyId, animalId, parameterCode)
         self.tableName = tableName
-
 
     """
         Function to get all results related to one specific parameter key
@@ -298,27 +305,23 @@ class ebiInfo(imageInfo):
         if not graph:
             print("Empty Json Object!")
             return
-        print(graph)
+        #print(graph)
         for g in graph:
             tempDict_ = {}
             for node in g.keys():
-                print(g[node])
+                #print(g[node])
 
                 """Ignore the metadata"""
                 if isinstance(g[node], list):
+                    logging.info("Ignore the metadata")
                     continue
                 """
                 If we found a match with keys, add it to the temp dict
                 """
                 if node in self.keys:
-                    tempDict_[node] = g[node]
+                    logging.debug(f"Adding {node} now")
+                    tempDict_[self.keys[node]] = g[node]
 
             data = pd.Series(tempDict_).to_frame()
             data = data.transpose()
             result.append(data)
-
-
-
-
-
-
