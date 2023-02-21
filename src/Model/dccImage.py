@@ -6,8 +6,8 @@ import requests
 
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
-logging.getLogger('dccImage').addHandler(logging.NullHandler())
-
+#logging.getLogger('dccImage').addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
 
 class imageInfo:
 
@@ -54,7 +54,7 @@ class impcInfo(imageInfo):
         # print(parameters)
         query = urlencode(query=parameters, doseq=True)
         url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
-        logging.debug(f"URL generated is:{url}")
+        logger.debug(f"URL generated is:{url}")
         print(url)
 
         """Get data back from impc"""
@@ -72,19 +72,22 @@ class impcInfo(imageInfo):
 
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
-            logging.warning(error)
+            logger.error(error)
             print(error)
 
         except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
+            logger.exception(error)
             print(error)
 
         except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         return result
@@ -113,7 +116,8 @@ class impcInfo(imageInfo):
         print(parameters)
         query = urlencode(query=parameters, doseq=True)
         url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
-        print(url)
+        logger.debug(f"URL is {url}")
+        #print(url)
         try:
             response = requests.get(url)
             payload = response.json()
@@ -125,21 +129,27 @@ class impcInfo(imageInfo):
                     data = data.transpose()
                     data.columns = colNames
                     result.append(data)
+            else:
+                logger.info("No related record found")
 
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
+            logger.error(err2)
             print(error)
 
         except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         return result

@@ -160,7 +160,10 @@ def main():
                     missingFiles = dcc.queryDB(conn_to_rslims, sql.format(parameterKey = f'"{line[1].strip()}"'))
                     logger.info("Number of missing files associate with {parameterCode} is {n}".
                                 format(parameterCode=line[1], n=len(missingFiles)))
-
+                    #print(type(missingFiles))
+                    fName = line[1].strip() + ".csv"
+                    dcc.generateReport(missingFiles, fName)
+            dcc.wrap(outputDir)
     else:
         logger.warning("Illegal input argument detected")
 
