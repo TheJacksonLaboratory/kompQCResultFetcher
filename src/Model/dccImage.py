@@ -6,8 +6,8 @@ import requests
 
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
-
 logging.getLogger('dccImage').addHandler(logging.NullHandler())
+
 
 class imageInfo:
 
@@ -47,11 +47,11 @@ class impcInfo(imageInfo):
         parameters = {"parameterKey": self.parameterKey}
         for i in range(len(args)):
             if args[i] == "":
-                #print(args[i])
+                # print(args[i])
                 continue
             parameters[self.filters[i]] = args[i]
 
-        #print(parameters)
+        # print(parameters)
         query = urlencode(query=parameters, doseq=True)
         url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
         logging.debug(f"URL generated is:{url}")
@@ -152,7 +152,7 @@ class impcInfo(imageInfo):
 
     def getByAnimalId(self, *args) -> list:
         if not self.animalId:
-            print("Invalid Input")
+            print("Invalid Config")
             return []
 
         """Generate the url"""
@@ -255,7 +255,10 @@ class ebiInfo(imageInfo):
             }
             response = requests.request("GET", url, headers=headers, data=payload)
             data = response.json()
+            print(len(data["response"]["docs"]))
             self.BFS(data["response"]["docs"], result)
+            #print(result)
+            return result
 
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
@@ -272,9 +275,6 @@ class ebiInfo(imageInfo):
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
             print(error)
-
-        print(result)
-        return result
 
     """
     Function to get all results related to one specific colonyId
@@ -305,12 +305,11 @@ class ebiInfo(imageInfo):
         if not graph:
             print("Empty Json Object!")
             return
-        #print(graph)
+        # print(graph)
+        tempDict_ = {}
         for g in graph:
-            tempDict_ = {}
             for node in g.keys():
-                #print(g[node])
-
+                # print(g[node])
                 """Ignore the metadata"""
                 if isinstance(g[node], list):
                     logging.info("Ignore the metadata")
@@ -325,3 +324,4 @@ class ebiInfo(imageInfo):
             data = pd.Series(tempDict_).to_frame()
             data = data.transpose()
             result.append(data)
+            print(len(result))

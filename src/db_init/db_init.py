@@ -9,10 +9,27 @@ from mysql.connector import errorcode
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
-User = "dba"
-Password = "rsdba"
-Host = "rslims-dev.jax.org"
-Database = "komp"
+"""
+def getDbServer():
+    return 'rslims.jax.org'
+
+
+def getDbUsername():
+    return 'dba'
+
+
+def getDbPassword():
+    return 'rsdba'
+
+
+def getDbSchema():
+    return 'komp'
+
+"""
+user = "dba"
+pwd = "rsdba"
+server = "rslims-dev.jax.org"
+database = "komp"
 
 outputDir = "/Users/chent/Desktop/KOMP_Project/FetchDCCResult/docs/Output"
 
@@ -54,7 +71,8 @@ Function to connect to database schema
 
 def init(schema) -> mysql.connector:
     try:
-        conn = mysql.connector.connect(host=Host, user=User, password=Password, database=schema)
+
+        conn = mysql.connector.connect(host=server, user=user, password=pwd, database=schema)
         logger.info(f"Successfully connected to {schema}")
         return conn
 
@@ -161,8 +179,8 @@ def insert_to_db(dataset, tableName):
         try:
 
             engine = create_engine("mysql+mysqlconnector://{0}:{1}@{2}/{3}".
-                                   format(User, Password, Host, Database),
-                                   pool_recycle=1,
+                                   format(user, pwd, server, database),
+                                   pool_recycle=3600,
                                    pool_timeout=57600,
                                    future=True)
 
@@ -171,17 +189,12 @@ def insert_to_db(dataset, tableName):
                 keys = conn.execute(text("SELECT * FROM komp.dccImages;")).keys()
 
             insertData.columns = keys
-            print(insertData)
-            insertData.to_sql(tableName, engine, if_exists='append', index=False)
+            #print(insertData)
+            insertData.to_sql(tableName, engine, if_exists='append', index=False, chunksize=1000)
             insertionResult = engine.connect().execute(text("SELECT * FROM komp.dccImages;"))
             logger.debug(f"Insertion result is:{insertionResult}")
-            result = engine.connect().execute(text("SELECT * FROM dccImages;"))
-            print(list(result))
-
-            if result.all():
-                logger.info("Data successfully inserted!")
-            else:
-                logger.debug("No record found, please check your dataframe")
+            result = engine.connect().execute(text("SELECT COUNT(*) FROM dccImages;"))
+            print(result.first()[0])
 
         except SQLAlchemyError as err:
             error = str(err.__dict__["orig"])
@@ -191,19 +204,14 @@ def insert_to_db(dataset, tableName):
 
         try:
             engine = create_engine("mysql+mysqlconnector://{0}:{1}@{2}/{3}".
-                                   format(User, Password, Host, Database),
-                                   pool_recycle=1,
+                                   format(user, pwd, server, database),
+                                   pool_recycle=3600,
                                    pool_timeout=57600,
                                    future=True)
-            print(df)
-            df.to_sql(tableName, engine, if_exists='append', index=False)
-            result = engine.connect().execute(text("SELECT * FROM komp.ebiimages;"))
-
-            if result.all():
-                logger.info("Data successfully inserted!")
-            else:
-                logger.debug("No record found, please check your dataframe")
-
+            # print(df)
+            df.to_sql(tableName, engine, if_exists='append', index=False, chunksize=1000)
+            result = engine.connect().execute(text("SELECT COUNT(*) FROM komp.ebiimages;"))
+            logger.debug(f"Number of rows in table is {result.first()[0]}")
         except SQLAlchemyError as err:
             error = str(err.__dict__["orig"])
             logger.error("Error message: {error}".format(error=error))
