@@ -8,11 +8,9 @@ import os
 import socket
 import sys
 from logging.handlers import RotatingFileHandler
-
 from urllib3.connection import HTTPConnection
 
-from DCCReporter import DccReport as dcc
-from Model.dccImage import impcInfo, ebiInfo
+from Model.dccImageInfo import impcInfo, ebiInfo
 from db_init import db_init as db
 
 outputDir = "/Users/chent/Desktop/KOMP_Project/FetchDCCResult/docs/Output"
@@ -25,7 +23,7 @@ except FileExistsError as e:
 
 """Setup logger"""
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Core")
 FORMAT = "[%(asctime)s->%(filename)s->%(funcName)s():%(lineno)s]%(levelname)s: %(message)s"
 logging.basicConfig(format=FORMAT, filemode="w", level=logging.DEBUG, force=True)
 logging_filename = outputDir + "/" + 'App.log'
@@ -78,6 +76,7 @@ def main():
     argv[1], argv[2]: (website name, file name)
     -e -> EBI
     -i -> IMPC
+    -r -> generate Report
     """
     if sys.argv[1] == "-e":
 
@@ -156,14 +155,18 @@ def main():
                 line = line.split(":")
                 logger.debug(f"Reading {line}")
                 if line[0] == "Parameter Key":
-                    #print(sql.format(parameterKey = line[1].strip()))
-                    missingFiles = dcc.queryDB(conn_to_rslims, sql.format(parameterKey = f'"{line[1].strip()}"'))
+                    # print(sql.format(parameterKey = line[1].strip()))
+                    missingFiles = db.getMissingFiles(conn_to_rslims,
+                                                      sql.format(parameterKey=f'"{line[1].strip()}"'))
                     logger.info("Number of missing files associate with {parameterCode} is {n}".
                                 format(parameterCode=line[1], n=len(missingFiles)))
-                    #print(type(missingFiles))
+                    # print(type(missingFiles))
                     fName = line[1].strip() + ".csv"
-                    dcc.generateReport(missingFiles, fName)
-            dcc.wrap(outputDir)
+                    db.generateMissingReport(missingFiles, fName)
+
+        #db.wrap(outputDir)
+
+
     else:
         logger.warning("Illegal input argument detected")
 

@@ -1,10 +1,12 @@
 import logging
 import os
 import random
+import zipfile
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 import mysql.connector
 import pandas as pd
+import pytest
 from mysql.connector import errorcode
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -31,23 +33,9 @@ pwd = "rsdba"
 server = "rslims-dev.jax.org"
 database = "komp"
 
-outputDir = "/Users/chent/Desktop/KOMP_Project/FetchDCCResult/docs/Output"
-
-try:
-    os.mkdir(outputDir)
-
-except FileExistsError as e:
-    print("File exists")
-
 """Setup logger"""
 
-logger = logging.getLogger(__name__)
-FORMAT = "[%(asctime)s->%(filename)s->%(funcName)s():%(lineno)s]%(levelname)s: %(message)s"
-logging.basicConfig(format=FORMAT, filemode="w", level=logging.DEBUG, force=True)
-logging_filename = outputDir + "/" + 'App.log'
-handler = RotatingFileHandler(logging_filename, maxBytes=10000000000, backupCount=10)
-handler.setFormatter(logging.Formatter(FORMAT))
-logger.addHandler(handler)
+logger = logging.getLogger("Core")
 
 """
 Function to list of JR nubers into n parts randomly
@@ -67,6 +55,7 @@ Function to connect to database schema
 @:param:
     schema: Name of schema to connect
 """
+
 
 
 def init(schema) -> mysql.connector:
@@ -101,6 +90,7 @@ Function to get IMPC test code
 """
 
 
+
 def queryParameterKey(conn, sql) -> list:
     if not conn or not sql:
         print("Empty connection/statement found")
@@ -125,6 +115,7 @@ Function to get colony ids/JR numbers
     conn: Connection to MySQL database
     sql: SQL statement to be executed 
 """
+
 
 
 def queryColonyId(conn, sql) -> list:
@@ -155,6 +146,7 @@ Function to store data into database
     start -> start page
     size = number of related animal in one page    
 """
+
 
 
 def insert_to_db(dataset, tableName):
@@ -189,7 +181,7 @@ def insert_to_db(dataset, tableName):
                 keys = conn.execute(text("SELECT * FROM komp.dccImages;")).keys()
 
             insertData.columns = keys
-            #print(insertData)
+            # print(insertData)
             insertData.to_sql(tableName, engine, if_exists='append', index=False, chunksize=1000)
             insertionResult = engine.connect().execute(text("SELECT * FROM komp.dccImages;"))
             logger.debug(f"Insertion result is:{insertionResult}")
@@ -220,3 +212,127 @@ def insert_to_db(dataset, tableName):
 
         logger.warning("Not a valid table!")
         return
+
+
+"""
+Function to retrieve list of info about missing files based on DCC record
+@:param
+    conn: MySQL.connector object 
+    sql: sql query to retrieve required data
+"""
+
+
+def getMissingFiles(conn, sql) -> list:
+    if not conn:
+        return []
+
+    result = []
+    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor.execute(sql)
+    queryResult = cursor.fetchall()
+
+    if not queryResult:
+        logger.warning("No missing record found")
+
+    logger.debug("Number of result missing files found:{size}".format(size=len(queryResult)))
+    # print(queryResult)
+    for row in queryResult:
+        data = pd.Series(row).to_frame()
+        data = data.transpose()
+        print(data)
+        result.append(data)
+
+    return result
+
+
+"""
+Function to generate report about missing images(in .csv or excel spreadsheet)
+@:param
+    parameterCodes: List of IMPC test code
+    fName: File name of generated report
+"""
+
+
+def generateMissingReport(parameterCodes, fName) -> None:
+    if not parameterCodes or not fName:
+        print("Unvalid input")
+        return
+
+    df = pd.concat(parameterCodes)
+    print(df)
+    here = "/Users/chent/Desktop/KOMP_Project/FetchDCCResult/docs/Output/"
+    outFile = here + fName
+    df.to_csv(outFile)
+    return
+
+
+def wrap(filePath) -> None:
+    fileList = os.listdir(filePath)
+    for file in fileList:
+        if not file.endswith(".csv"):
+            logger.info(f"Removing file {file}")
+            fileList.remove(file)
+
+    with zipfile.ZipFile("report.zip", "w") as zipFile:
+        logger.info("Compressing")
+        for f in fileList:
+            zipFile.write(f, compress_type=zipfile.ZIP_DEFLATED)
+
+
+"""
+Function to send generated reports to users via email
+"""
+
+
+def send_to() -> None:
+    pass
+
+
+"""
+Function to set status of an image to be "approved"
+@:param
+    conn: MySQL.connector object 
+    sql: sql query to retrieve required data
+"""
+
+
+def set_to_submitted(conn, fName) -> None:
+    if not conn:
+        logger.error("No connection found")
+        return
+
+    df = pd.read_csv(fName)
+    procedureInstanceKeys = df["_procedureInstancekeys"].tolist()
+
+    sql = "UPDATE rslims.ProcedureInstance SET DateModified=NOW(), ModifiedBy='DccUploader', " \
+          "_LevelTwoReviewAction_key=14 WHERE _ProcedureInstance_key IN ({val});"
+    cursor = conn.cursor(buffered=True, dictionary=True)
+
+    for procedureInstanceKey in procedureInstanceKeys:
+        logger.debug(f"Start updating {procedureInstanceKey}")
+        cursor.execute(sql.format(val=procedureInstanceKey))
+
+
+"""
+Function to set status of an image to be "approved"
+@:param
+    conn: MySQL.connector object 
+    sql: sql query to retrieve required data
+"""
+
+
+def set_to_success(conn, fName) -> None:
+    if not conn:
+        logger.error("No connection found")
+        return
+
+    df = pd.read_csv(fName)
+    procedureInstanceKeys = df["_procedureInstancekeys"].tolist()
+
+    sql = "UPDATE rslims.ProcedureInstance SET DateModified=NOW(), ModifiedBy='DccUploader', " \
+          "_LevelTwoReviewAction_key=13 WHERE _ProcedureInstance_key IN ({val});"
+    cursor = conn.cursor(buffered=True, dictionary=True)
+
+    for procedureInstanceKey in procedureInstanceKeys:
+        logger.debug(f"Start updating {procedureInstanceKey}")
+        cursor.execute(sql.format(val=procedureInstanceKey))

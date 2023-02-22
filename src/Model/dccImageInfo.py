@@ -6,8 +6,9 @@ import requests
 
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
-#logging.getLogger('dccImage').addHandler(logging.NullHandler())
-logger = logging.getLogger(__name__)
+# logging.getLogger('dccImage').addHandler(logging.NullHandler())
+logger = logging.getLogger("Core")
+
 
 class imageInfo:
 
@@ -117,7 +118,7 @@ class impcInfo(imageInfo):
         query = urlencode(query=parameters, doseq=True)
         url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
         logger.debug(f"URL is {url}")
-        #print(url)
+        # print(url)
         try:
             response = requests.get(url)
             payload = response.json()
@@ -267,7 +268,7 @@ class ebiInfo(imageInfo):
             data = response.json()
             print(len(data["response"]["docs"]))
             self.BFS(data["response"]["docs"], result)
-            #print(result)
+            # print(result)
             return result
 
         except requests.exceptions.HTTPError as err1:
@@ -335,3 +336,5 @@ class ebiInfo(imageInfo):
             data = data.transpose()
             result.append(data)
             print(len(result))
+
+
