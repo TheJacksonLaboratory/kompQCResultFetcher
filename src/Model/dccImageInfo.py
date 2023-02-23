@@ -12,7 +12,8 @@ logger = logging.getLogger("Core")
 
 class imageInfo:
 
-    def __init__(self, colonyId, animalId, parameterKey):
+    def __init__(self, uniqueId, colonyId=None, animalId=None, parameterKey=None):
+        self.uniqueId = uniqueId
         self.colonyId = colonyId
         self.animalId = animalId
         self.parameterKey = parameterKey
@@ -26,8 +27,8 @@ class impcInfo(imageInfo):
         tableName: Table in the schema to be insert
     """
 
-    def __init__(self, colonyId, animalId, parameterKey, tableName):
-        super().__init__(colonyId, animalId, parameterKey)
+    def __init__(self, tableName, uniqueId, colonyId=None, animalId=None, parameterKey=None):
+        super().__init__(uniqueId, colonyId, animalId, parameterKey)
         self.tableName = tableName
 
     """
@@ -47,7 +48,7 @@ class impcInfo(imageInfo):
         """Generate the url"""
         parameters = {"parameterKey": self.parameterKey}
         for i in range(len(args)):
-            if args[i] == "":
+            if args[i] == "" or args[i] is None:
                 # print(args[i])
                 continue
             parameters[self.filters[i]] = args[i]
@@ -163,7 +164,7 @@ class impcInfo(imageInfo):
 
     def getByAnimalId(self, *args) -> list:
         if not self.animalId:
-            print("Invalid Config")
+            logger.error("Invalid Config")
             return []
 
         """Generate the url"""
@@ -174,10 +175,9 @@ class impcInfo(imageInfo):
                 continue
             parameters[self.filters[i]] = args[i]
 
-        print(parameters)
         query = urlencode(query=parameters, doseq=True)
         url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
-        print(url)
+        logger.info(f"URL is :{url}")
 
         result = []
         try:
@@ -194,18 +194,22 @@ class impcInfo(imageInfo):
 
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
+            logger.error(error)
             print(error)
 
         return result
@@ -225,8 +229,8 @@ class ebiInfo(imageInfo):
     ExperimentName = experiment_source_id
     """
     filters = ["parameterKey", "genotype", "start", "rows"]
-    EBI_URL_Template = "https://www.ebi.ac.uk/mi/impc/solr/impc_images/select?q=parameter_stable_id" \
-                       ":%20{parameterKey}%20AND%20phenotyping_center:JAX&wt=json&indent=true&start=" \
+    EBI_URL_Template = "https://www.ebi.ac.uk/mi/impc/solr/impc_images/select?q={filter}" \
+                       ":%20{val}%20AND%20phenotyping_center:JAX&wt=json&indent=true&start=" \
                        "{start}&rows={dest}"
 
     keys = {"parameter_stable_id": "ImpcCode", "date_of_birth": "DOB",
@@ -239,8 +243,8 @@ class ebiInfo(imageInfo):
            tableName: Table in the schema to be insert
        """
 
-    def __init__(self, colonyId, animalId, parameterCode, tableName):
-        super().__init__(colonyId, animalId, parameterCode)
+    def __init__(self, uniqueId, tableName, colonyId=None, animalId=None, parameterCode=None):
+        super().__init__(uniqueId, colonyId, animalId, parameterCode)
         self.tableName = tableName
 
     """
@@ -255,7 +259,52 @@ class ebiInfo(imageInfo):
             print("No such parameter key")
             return []
 
-        url = self.EBI_URL_Template.format(parameterKey=self.parameterKey, start=args[0], dest=args[1])
+        url = self.EBI_URL_Template.format(filter="parameter_stable_id", parameterKey=self.parameterKey,
+                                           start=args[0], dest=args[1])
+        print(url)
+        result = []
+        try:
+            payload = {}
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': 'Basic c3ZjLWxpbXNkYkBqYXgub3JnOnZBJmNlMyhST3pBTA=='
+            }
+            response = requests.request("GET", url, headers=headers, data=payload)
+            data = response.json()
+            print(len(data["response"]["docs"]))
+            self.BFS(data["response"]["docs"], result)
+            # print(result)
+            return result
+
+        except requests.exceptions.HTTPError as err1:
+            error = str(err1.__dict__["orig"])
+            logger.error(error)
+
+        except requests.exceptions.ConnectionError as err2:
+            error = str(err2.__dict__["orig"])
+            logger.error(error)
+
+        except requests.exceptions.Timeout as err3:
+            error = str(err3.__dict__["orig"])
+            logger.error(error)
+
+        except requests.exceptions.RequestException as err4:
+            error = str(err4.__dict__["orig"])
+            logger.error(error)
+
+    """
+    Function to get all results related to one specific colonyId
+    @:param
+        colonyId: JAX mouse colonyId
+    """
+
+    def getByColonyId(self, *args) -> list:
+        if not self.colonyId:
+            logger.error("No such JR Number")
+            return []
+
+        url = self.EBI_URL_Template.format(filter="colony_id", parameterKey=self.colonyId,
+                                           start=args[0], dest=args[1])
         print(url)
         result = []
         try:
@@ -277,24 +326,15 @@ class ebiInfo(imageInfo):
 
         except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
-            print(error)
+            logger.error(error)
 
         except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
-            print(error)
+            logger.error(error)
 
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
-            print(error)
-
-    """
-    Function to get all results related to one specific colonyId
-    @:param
-        colonyId: JAX mouse colonyId
-    """
-
-    def getByColonyId(self, *args) -> list:
-        pass
+            logger.error(error)
 
     """
     Function to get all results related to one specific mouse
@@ -304,6 +344,50 @@ class ebiInfo(imageInfo):
 
     def getByOrg(self, *args) -> list:
         pass
+
+    """
+       Function to get all results related to one specific mouse
+       @:param
+           animalId: JAX mouse id
+       """
+
+    def getByAnimalId(self, *args) -> list:
+        if not self.colonyId:
+            logger.error("No such JR Number")
+            return []
+
+        url = self.EBI_URL_Template.format(filter="external_sample_id", parameterKey=self.animalId,
+                                           start=args[0], dest=args[1])
+        print(url)
+        result = []
+        try:
+            payload = {}
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': 'Basic c3ZjLWxpbXNkYkBqYXgub3JnOnZBJmNlMyhST3pBTA=='
+            }
+            response = requests.request("GET", url, headers=headers, data=payload)
+            data = response.json()
+            print(len(data["response"]["docs"]))
+            self.BFS(data["response"]["docs"], result)
+            # print(result)
+            return result
+
+        except requests.exceptions.HTTPError as err1:
+            error = str(err1.__dict__["orig"])
+            print(error)
+
+        except requests.exceptions.ConnectionError as err2:
+            error = str(err2.__dict__["orig"])
+            logger.error(error)
+
+        except requests.exceptions.Timeout as err3:
+            error = str(err3.__dict__["orig"])
+            logger.error(error)
+
+        except requests.exceptions.RequestException as err4:
+            error = str(err4.__dict__["orig"])
+            logger.error(error)
 
     """
     Function to traverse nested json object
@@ -335,6 +419,4 @@ class ebiInfo(imageInfo):
             data = pd.Series(tempDict_).to_frame()
             data = data.transpose()
             result.append(data)
-            print(len(result))
-
-
+            # print(len(result))

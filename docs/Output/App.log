@@ -1,0 +1,9 @@
+[2023-02-23 12:10:45,344->db_init.py->init():65]INFO: Successfully connected to rslims
+[2023-02-23 12:10:45,766->db_init.py->init():65]INFO: Successfully connected to komp
+[2023-02-23 12:10:46,269->App.py->main():64]DEBUG: Number of impc test codes is 1922
+[2023-02-23 12:10:50,583->App.py->main():66]DEBUG: Number of JR number is 1922
+[2023-02-23 12:10:50,594->App.py->main():110]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-02-23 12:10:50,594->App.py->main():113]INFO: Query by Parameter Key
+[2023-02-23 12:10:50,595->dccImageInfo.py->getByParameterKey():59]DEBUG: URL generated is:https://api.mousephenotype.org/media/J?parameterKey=IMPC_EYE_050_001&start=0&resultsize=2147483647
+[2023-02-23 12:10:53,313->App.py->main():117]DEBUG: Number of records found:3772
+[2023-02-23 12:10:53,313->App.py->main():136]ERROR: Invalid input file

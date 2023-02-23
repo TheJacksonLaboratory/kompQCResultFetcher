@@ -57,7 +57,6 @@ Function to connect to database schema
 """
 
 
-
 def init(schema) -> mysql.connector:
     try:
 
@@ -90,7 +89,6 @@ Function to get IMPC test code
 """
 
 
-
 def queryParameterKey(conn, sql) -> list:
     if not conn or not sql:
         print("Empty connection/statement found")
@@ -115,7 +113,6 @@ Function to get colony ids/JR numbers
     conn: Connection to MySQL database
     sql: SQL statement to be executed 
 """
-
 
 
 def queryColonyId(conn, sql) -> list:
@@ -146,7 +143,6 @@ Function to store data into database
     start -> start page
     size = number of related animal in one page    
 """
-
 
 
 def insert_to_db(dataset, tableName):

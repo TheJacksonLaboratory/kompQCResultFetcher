@@ -5,6 +5,7 @@
 
 import logging
 import os
+import random
 import socket
 import sys
 from logging.handlers import RotatingFileHandler
@@ -74,9 +75,11 @@ def main():
 
     """
     argv[1], argv[2]: (website name, file name)
-    -e -> EBI
-    -i -> IMPC
-    -r -> generate Report
+    Usage eg:
+        python App.py [-e] [-i] [-r] test.txt
+        -e -> Retrieve result from EBI
+        -i -> Retrieve result from IMPC
+        -r -> Generate Report 
     """
     if sys.argv[1] == "-e":
 
@@ -104,14 +107,35 @@ def main():
 
         for line in lines:
             line = line.split(":")
-            logger.debug(f"Reading {line}")
+            logger.info(f"Reading {line}")
+
             if line[0] == "Parameter Key":
-                newImage = impcInfo("", "", line[1].strip(), "dccimages")
-                # newImage = ebiInfo("", "", line[1].strip(), "test")
+                logger.info("Query by {key}".format(key=line[0]))
+                newImage = impcInfo(random.randint(0, 10000),  "dccimages", parameterKey=line[1].strip())
                 result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
-                # print(result)
+                #print(result)
+                logger.debug("Number of records found:{size}".format(size=len(result)))
+                #db.insert_to_db(result, newImage.tableName)
+
+            if line[0] == "AnimalId":
+                logger.info("Query by {key}".format(key=line[0]))
+                newImage = impcInfo(random.randint(0, 10000), "dccimages", animalId=line[1].strip())
+                result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
+                #print(result)
                 logger.debug("Number of records found:{size}".format(size=len(result)))
                 db.insert_to_db(result, newImage.tableName)
+
+            if line[0] == "JR Number":
+                logger.info("Query by {key}".format(key=line[0]))
+                newImage = impcInfo(random.randint(0, 10000), "dccimages", colonyId=line[1].strip())
+                result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
+                #print(result)
+                logger.debug("Number of records found:{size}".format(size=len(result)))
+                db.insert_to_db(result, newImage.tableName)
+
+            else:
+                logger.error("Invalid input file")
+                return
 
     """User wants to generate report based on input files"""
     if sys.argv[1] == "-r":
@@ -164,8 +188,7 @@ def main():
                     fName = line[1].strip() + ".csv"
                     db.generateMissingReport(missingFiles, fName)
 
-        #db.wrap(outputDir)
-
+        # db.wrap(outputDir)
 
     else:
         logger.warning("Illegal input argument detected")

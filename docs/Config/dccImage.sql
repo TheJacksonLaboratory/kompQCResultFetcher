@@ -6,7 +6,6 @@ FROM
 WHERE
 ExternalID IS NOT NULL AND CHAR_LENGTH(ExternalID) > 0 AND
     _dataType_key = 7;
-select DISTINCT ExternalID FROM Output WHERE _DataType_key=7 AND ExternalID is not NULL;
 -- Stock numbers as JR numbers for complete KOMP lines.
 SELECT
     CONCAT('JR', RIGHT(StockNumber, 5)) AS JR
