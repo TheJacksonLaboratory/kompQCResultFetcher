@@ -12,8 +12,7 @@ logger = logging.getLogger("Core")
 
 class imageInfo:
 
-    def __init__(self, uniqueId, colonyId=None, animalId=None, parameterKey=None):
-        self.uniqueId = uniqueId
+    def __init__(self, colonyId=None, animalId=None, parameterKey=None):
         self.colonyId = colonyId
         self.animalId = animalId
         self.parameterKey = parameterKey
@@ -27,8 +26,8 @@ class impcInfo(imageInfo):
         tableName: Table in the schema to be insert
     """
 
-    def __init__(self, tableName, uniqueId, colonyId=None, animalId=None, parameterKey=None):
-        super().__init__(uniqueId, colonyId, animalId, parameterKey)
+    def __init__(self, tableName, colonyId=None, animalId=None, parameterKey=None):
+        super().__init__(colonyId, animalId, parameterKey)
         self.tableName = tableName
 
     """
@@ -243,8 +242,8 @@ class ebiInfo(imageInfo):
            tableName: Table in the schema to be insert
        """
 
-    def __init__(self, uniqueId, tableName, colonyId=None, animalId=None, parameterCode=None):
-        super().__init__(uniqueId, colonyId, animalId, parameterCode)
+    def __init__(self, tableName, colonyId=None, animalId=None, parameterCode=None):
+        super().__init__(colonyId, animalId, parameterCode)
         self.tableName = tableName
 
     """

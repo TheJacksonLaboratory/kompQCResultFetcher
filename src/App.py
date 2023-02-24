@@ -103,23 +103,24 @@ def main():
         with open(filePtr, "r") as f:
             lines = f.readlines()
 
-        print(lines)
-
+        #print(lines)
+        lineNumber = 0
         for line in lines:
+            lineNumber = lineNumber + 1
             line = line.split(":")
             logger.info(f"Reading {line}")
 
             if line[0] == "Parameter Key":
                 logger.info("Query by {key}".format(key=line[0]))
-                newImage = impcInfo(random.randint(0, 10000),  "dccimages", parameterKey=line[1].strip())
+                newImage = impcInfo("dccimages", parameterKey=line[1].strip())
                 result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
                 #print(result)
                 logger.debug("Number of records found:{size}".format(size=len(result)))
-                #db.insert_to_db(result, newImage.tableName)
+                db.insert_to_db(result, newImage.tableName)
 
             if line[0] == "AnimalId":
                 logger.info("Query by {key}".format(key=line[0]))
-                newImage = impcInfo(random.randint(0, 10000), "dccimages", animalId=line[1].strip())
+                newImage = impcInfo("dccimages", animalId=line[1].strip())
                 result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
                 #print(result)
                 logger.debug("Number of records found:{size}".format(size=len(result)))
@@ -127,7 +128,7 @@ def main():
 
             if line[0] == "JR Number":
                 logger.info("Query by {key}".format(key=line[0]))
-                newImage = impcInfo(random.randint(0, 10000), "dccimages", colonyId=line[1].strip())
+                newImage = impcInfo("dccimages", colonyId=line[1].strip())
                 result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
                 #print(result)
                 logger.debug("Number of records found:{size}".format(size=len(result)))
