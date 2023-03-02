@@ -7,3 +7,25 @@
 [2023-02-23 12:10:50,595->dccImageInfo.py->getByParameterKey():59]DEBUG: URL generated is:https://api.mousephenotype.org/media/J?parameterKey=IMPC_EYE_050_001&start=0&resultsize=2147483647
 [2023-02-23 12:10:53,313->App.py->main():117]DEBUG: Number of records found:3772
 [2023-02-23 12:10:53,313->App.py->main():136]ERROR: Invalid input file
+[2023-03-01 10:22:46,071->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-01 10:22:46,498->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-01 10:22:47,024->App.py->main():64]DEBUG: Number of impc test codes is 1924
+[2023-03-01 10:22:50,956->App.py->main():66]DEBUG: Number of JR number is 1924
+[2023-03-01 10:23:14,350->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-01 10:23:14,778->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-01 10:23:15,245->App.py->main():64]DEBUG: Number of impc test codes is 1924
+[2023-03-01 10:23:18,214->App.py->main():66]DEBUG: Number of JR number is 1924
+[2023-03-01 10:23:18,222->App.py->main():115]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-01 10:23:18,222->App.py->main():118]INFO: Query by Parameter Key
+[2023-03-01 10:23:18,222->dccImageInfo.py->getByParameterKey():69]DEBUG: URL generated is:https://api.mousephenotype.org/media/J?parameterKey=IMPC_EYE_050_001&start=0&resultsize=2147483647
+[2023-03-01 10:23:21,190->App.py->main():122]DEBUG: Number of records found:3772
+[2023-03-01 10:23:21,190->App.py->main():142]ERROR: Invalid input file
+[2023-03-01 10:26:29,533->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-01 10:26:29,966->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-01 10:26:30,445->App.py->main():64]DEBUG: Number of impc test codes is 1924
+[2023-03-01 10:26:33,524->App.py->main():66]DEBUG: Number of JR number is 1924
+[2023-03-01 10:26:33,533->App.py->main():115]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-01 10:26:33,533->App.py->main():118]INFO: Query by Parameter Key
+[2023-03-01 10:26:33,534->dccImageInfo.py->getByParameterKey():77]DEBUG: URL generated is:https://api.mousephenotype.org/media/J?parameterKey=IMPC_EYE_050_001&start=0&resultsize=2147483647
+[2023-03-01 10:26:36,354->App.py->main():122]DEBUG: Number of records found:3772
+[2023-03-01 10:26:36,354->App.py->main():142]ERROR: Invalid input file

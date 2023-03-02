@@ -12,10 +12,30 @@ logger = logging.getLogger("Core")
 
 class imageInfo:
 
-    def __init__(self, colonyId=None, animalId=None, parameterKey=None):
+    def __init__(self, colonyId, animalId, parameterKey):
         self.colonyId = colonyId
         self.animalId = animalId
         self.parameterKey = parameterKey
+
+    """Encapsulate the class"""
+
+    def setParameterKey(self, parameterKey) -> None:
+        self.parameterKey = parameterKey
+
+    def setColonyId(self, colonyId) -> None:
+        self.colonyId = colonyId
+
+    def setAnimalId(self, animalId):
+        self.animalId = animalId
+
+    def getParameterKey(self):
+        return self.parameterKey
+
+    def getColonyId(self):
+        return self.colonyId
+
+    def getAnimalId(self):
+        return self.animalId
 
 
 class impcInfo(imageInfo):
@@ -26,7 +46,7 @@ class impcInfo(imageInfo):
         tableName: Table in the schema to be insert
     """
 
-    def __init__(self, tableName, colonyId=None, animalId=None, parameterKey=None):
+    def __init__(self, tableName=None, colonyId=None, animalId=None, parameterKey=None):
         super().__init__(colonyId, animalId, parameterKey)
         self.tableName = tableName
 
@@ -36,7 +56,7 @@ class impcInfo(imageInfo):
         :parameterKey: DCC parameter test code, e.g. IMPC_EYE_050_001
     """
 
-    def getByParameterKey(self, *args) -> list:
+    def getImagesByParameterKey(self, *args) -> list:
 
         if not self.parameterKey:
             print("No such parameter key")
@@ -74,22 +94,18 @@ class impcInfo(imageInfo):
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
             logger.exception(error)
-            print(error)
 
         except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         return result
 
@@ -99,7 +115,7 @@ class impcInfo(imageInfo):
         colonyId: JAX mouse colonyId
     """
 
-    def getByColonyId(self, *args) -> list:
+    def getImagesByColonyId(self, *args) -> list:
 
         if not self.colonyId:
             print("No colonyId found")
@@ -136,22 +152,18 @@ class impcInfo(imageInfo):
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
             logger.error(err2)
-            print(error)
 
         except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         return result
 
@@ -161,7 +173,7 @@ class impcInfo(imageInfo):
            animalId: JAX mouse id/organism id
     """
 
-    def getByAnimalId(self, *args) -> list:
+    def getImagesByAnimalId(self, *args) -> list:
         if not self.animalId:
             logger.error("Invalid Config")
             return []
@@ -194,24 +206,45 @@ class impcInfo(imageInfo):
         except requests.exceptions.HTTPError as err1:
             error = str(err1.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         except requests.exceptions.ConnectionError as err2:
             error = str(err2.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         except requests.exceptions.Timeout as err3:
             error = str(err3.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         except requests.exceptions.RequestException as err4:
             error = str(err4.__dict__["orig"])
             logger.error(error)
-            print(error)
 
         return result
+
+    """
+    Function to get list of files with validation issue 
+    @:param 
+        updatedSinceDate – The day when file has been 
+        crawled. The endpoint point will fetch all files 
+        with a date >= updatedSinceDate. The default value 
+        is one month before current date.
+    """
+
+    def getFilesWithValidationError(self, *args) -> list:
+
+        pass
+
+    """
+    Function to get list of files with xml issue 
+    @:param 
+        updatedSinceDate – The day when file has been 
+        crawled. The endpoint point will fetch all files 
+        with a date >= updatedSinceDate. The default value 
+        is one month before current date.
+    """
+
+    def getFilesWithXmlError(self, *args) -> list:
+        pass
 
 
 class ebiInfo(imageInfo):

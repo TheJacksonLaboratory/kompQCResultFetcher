@@ -64,7 +64,13 @@ def main():
     logger.debug("Number of impc test codes is {size}".format(size=len(parameterKeys)))
     colonyIds = db.queryColonyId(conn_to_rslims, commands[2])
     logger.debug("Number of JR number is {size}".format(size=len(colonyIds)))
+
     """
+    testImageInfo = impcInfo()
+    testImageInfo.setParameterKey(parameterKeys[0])
+    testImageInfo.setColonyId(colonyIds[0])
+    print(testImageInfo.getParameterKey())
+    
     for parameterKey in parameterKeys:
         print(parameterKey)
         newImage = impcInfo("", "", parameterKey, "komp.dccimages")
@@ -81,62 +87,72 @@ def main():
         -i -> Retrieve result from IMPC
         -r -> Generate Report 
     """
+
+    """User wants to query EBI"""
     if sys.argv[1] == "-e":
 
-        filePtr = sys.argv[2]
-        with open(filePtr, "r") as f:
-            lines = f.readlines()
+        if sys.argv[2] == "image":
+            filePtr = sys.argv[3]
+            with open(filePtr, "r") as f:
+                lines = f.readlines()
 
-        print(lines)
+            for line in lines:
+                line = line.split(":")
+                logger.debug(f"Reading {line}")
+                if line[0] == "Parameter Key":
+                    newImage = ebiInfo("", "", line[1].strip(), "ebiimages")
+                    result = newImage.getByParameterKey(0, 2 ** 31 - 1)
+                    logger.debug("Number of records found:{size}".format(size=len(result)))
+                    db.insert_to_db(result, newImage.tableName)
 
-        for line in lines:
-            line = line.split(":")
-            logger.debug(f"Reading {line}")
-            if line[0] == "Parameter Key":
-                newImage = ebiInfo("", "", line[1].strip(), "ebiimages")
-                result = newImage.getByParameterKey(0, 2 ** 31 - 1)
-                logger.debug("Number of records found:{size}".format(size=len(result)))
-                db.insert_to_db(result, newImage.tableName)
+        elif sys.argv[2] == "procedure":
+            #Pending implementation in the module
+            pass
 
+    """User wants to query IMPC"""
     if sys.argv[1] == "-i":
-        filePtr = sys.argv[2]
-        with open(filePtr, "r") as f:
-            lines = f.readlines()
 
-        #print(lines)
-        lineNumber = 0
-        for line in lines:
-            lineNumber = lineNumber + 1
-            line = line.split(":")
-            logger.info(f"Reading {line}")
+        if sys.argv[2] == "image":
+            filePtr = sys.argv[3]
+            with open(filePtr, "r") as f:
+                lines = f.readlines()
 
-            if line[0] == "Parameter Key":
-                logger.info("Query by {key}".format(key=line[0]))
-                newImage = impcInfo("dccimages", parameterKey=line[1].strip())
-                result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
-                #print(result)
-                logger.debug("Number of records found:{size}".format(size=len(result)))
-                db.insert_to_db(result, newImage.tableName)
+            lineNumber = 0
+            for line in lines:
+                lineNumber = lineNumber + 1
+                line = line.split(":")
+                logger.info(f"Reading {line}")
 
-            if line[0] == "AnimalId":
-                logger.info("Query by {key}".format(key=line[0]))
-                newImage = impcInfo("dccimages", animalId=line[1].strip())
-                result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
-                #print(result)
-                logger.debug("Number of records found:{size}".format(size=len(result)))
-                db.insert_to_db(result, newImage.tableName)
+                if line[0] == "Parameter Key":
+                    logger.info("Query by {key}".format(key=line[0]))
+                    newImage = impcInfo("dccimages", parameterKey=line[1].strip())
+                    result = newImage.getImagesByParameterKey("", "", 0, 2 ** 31 - 1)
+                    logger.debug("Number of records found:{size}".format(size=len(result)))
+                    #db.insert_to_db(result, newImage.tableName)
 
-            if line[0] == "JR Number":
-                logger.info("Query by {key}".format(key=line[0]))
-                newImage = impcInfo("dccimages", colonyId=line[1].strip())
-                result = newImage.getByParameterKey("", "", 0, 2 ** 31 - 1)
-                #print(result)
-                logger.debug("Number of records found:{size}".format(size=len(result)))
-                db.insert_to_db(result, newImage.tableName)
+                elif line[0] == "AnimalId":
+                    logger.info("Query by {key}".format(key=line[0]))
+                    newImage = impcInfo("dccimages", animalId=line[1].strip())
+                    result = newImage.getImagesByAnimalId("", "", 0, 2 ** 31 - 1)
+                    #print(result)
+                    logger.debug("Number of records found:{size}".format(size=len(result)))
+                    db.insert_to_db(result, newImage.tableName)
 
-            else:
-                logger.error("Invalid input file")
-                return
+                elif line[0] == "JR Number":
+                    logger.info("Query by {key}".format(key=line[0]))
+                    newImage = impcInfo("dccimages", colonyId=line[1].strip())
+                    result = newImage.getImagesByColonyId("", "", 0, 2 ** 31 - 1)
+                    #print(result)
+                    logger.debug("Number of records found:{size}".format(size=len(result)))
+                    db.insert_to_db(result, newImage.tableName)
+
+                else:
+                    logger.error("Invalid input file")
+                    return
+
+        elif sys.argv[2] == "procedure":
+            #Pending implementation
+            pass
 
     """User wants to generate report based on input files"""
     if sys.argv[1] == "-r":
@@ -189,7 +205,7 @@ def main():
                     fName = line[1].strip() + ".csv"
                     db.generateMissingReport(missingFiles, fName)
 
-        # db.wrap(outputDir)
+        #db.wrap(outputDir)
 
     else:
         logger.warning("Illegal input argument detected")
