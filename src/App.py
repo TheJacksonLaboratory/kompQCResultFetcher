@@ -9,6 +9,8 @@ import random
 import socket
 import sys
 from logging.handlers import RotatingFileHandler
+
+import pandas as pd
 from urllib3.connection import HTTPConnection
 
 from Model.DccImageInfo import impcInfo, ebiInfo
@@ -127,9 +129,11 @@ def main():
                 if line[0] == "Parameter Key":
                     logger.info("Query by {key}".format(key=line[0]))
                     newImage = impcInfo("dccimages", parameterKey=line[1].strip())
-                    result = newImage.getImagesByParameterKey("", "", 0, 2 ** 31 - 1)
+                    result = newImage.getImagesByParameterKey(0, 2 ** 31 - 1)
                     logger.debug("Number of records found:{size}".format(size=len(result)))
-                    #db.insert_to_db(result, newImage.tableName)
+                    #df = pd.concat(result)
+                    #df.to_csv(outputDir + "/" + "demo.csv")
+                    db.insert_to_db(result, newImage.tableName)
 
                 elif line[0] == "AnimalId":
                     logger.info("Query by {key}".format(key=line[0]))

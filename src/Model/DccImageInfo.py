@@ -54,59 +54,136 @@ class impcInfo(imageInfo):
     """
     Function to get all results related to one specific parameter key
     @:param
-        :parameterKey: DCC parameter test code, e.g. IMPC_EYE_050_001
+        start: start index of an image
+        resultSize: number of json object displayed on one page
     """
 
-    def getImagesByParameterKey(self, *args) -> list:
+    def getImagesByParameterKey(self, start: Optional[int] = None, resultSize: Optional[int] = None) -> list:
 
         if not self.parameterKey:
-            print("No such parameter key")
-            return []
+            raise ValueError("No parameter key found  in the object")
+
+        if start < 0 or start > 2 ** 31 - 1 \
+                or resultSize > 2 ** 31 - 1 or resultSize <= 0:
+            raise ValueError("Invalid start or result size")
 
         result = []
 
         """Generate the url"""
         parameters = {"parameterKey": self.parameterKey}
-        for i in range(len(args)):
-            if args[i] == "" or args[i] is None:
-                # print(args[i])
-                continue
-            parameters[self.filters[i]] = args[i]
+        if not start and not resultSize:
+            """ 
+            for i in range(len(args)):
+                if args[i] == "" or args[i] is None:
+                    # print(args[i])
+                    continue
+                parameters[self.filters[i]] = args[i]
+            """
+            # print(parameters)
+            query = urlencode(query=parameters, doseq=True)
+            url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+            logger.debug(f"URL generated is:{url}")
+            print(url)
 
-        # print(parameters)
-        query = urlencode(query=parameters, doseq=True)
-        url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
-        logger.debug(f"URL generated is:{url}")
-        print(url)
+            """Get data back from impc"""
+            try:
+                response = requests.get(url)
+                payload = response.json()
+                '''Data found'''
+                if payload["total"] > 0:
+                    colNames = payload["mediaFiles"][0].keys()
+                    for dict_ in payload["mediaFiles"]:
+                        data = pd.Series(dict_).to_frame()
+                        data = data.transpose()
+                        data.columns = colNames
+                        result.append(data)
 
-        """Get data back from impc"""
-        try:
-            response = requests.get(url)
-            payload = response.json()
-            '''Data found'''
-            if payload["total"] > 0:
-                colNames = payload["mediaFiles"][0].keys()
-                for dict_ in payload["mediaFiles"]:
-                    data = pd.Series(dict_).to_frame()
-                    data = data.transpose()
-                    data.columns = colNames
-                    result.append(data)
+            except requests.exceptions.HTTPError as err1:
+                error = str(err1.__dict__["orig"])
+                logger.error(error)
 
-        except requests.exceptions.HTTPError as err1:
-            error = str(err1.__dict__["orig"])
-            logger.error(error)
+            except requests.exceptions.ConnectionError as err2:
+                error = str(err2.__dict__["orig"])
+                logger.exception(error)
 
-        except requests.exceptions.ConnectionError as err2:
-            error = str(err2.__dict__["orig"])
-            logger.exception(error)
+            except requests.exceptions.Timeout as err3:
+                error = str(err3.__dict__["orig"])
+                logger.error(error)
 
-        except requests.exceptions.Timeout as err3:
-            error = str(err3.__dict__["orig"])
-            logger.error(error)
+            except requests.exceptions.RequestException as err4:
+                error = str(err4.__dict__["orig"])
+                logger.error(error)
 
-        except requests.exceptions.RequestException as err4:
-            error = str(err4.__dict__["orig"])
-            logger.error(error)
+        if start >= 0 and not resultSize:
+            parameters["start"] = start
+            query = urlencode(query=parameters, doseq=True)
+            url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+            logger.debug(f"URL generated is:{url}")
+            print(url)
+            """Get data back from impc"""
+            try:
+                response = requests.get(url)
+                payload = response.json()
+                '''Data found'''
+                if payload["total"] > 0:
+                    colNames = payload["mediaFiles"][0].keys()
+                    for dict_ in payload["mediaFiles"]:
+                        data = pd.Series(dict_).to_frame()
+                        data = data.transpose()
+                        data.columns = colNames
+                        result.append(data)
+
+            except requests.exceptions.HTTPError as err1:
+                error = str(err1.__dict__["orig"])
+                logger.error(error)
+
+            except requests.exceptions.ConnectionError as err2:
+                error = str(err2.__dict__["orig"])
+                logger.exception(error)
+
+            except requests.exceptions.Timeout as err3:
+                error = str(err3.__dict__["orig"])
+                logger.error(error)
+
+            except requests.exceptions.RequestException as err4:
+                error = str(err4.__dict__["orig"])
+                logger.error(error)
+
+        if start >= 0 and resultSize > 0:
+            parameters["start"] = start
+            parameters["resultsize"] = resultSize
+            query = urlencode(query=parameters, doseq=True)
+            url = urlunsplit(("https", "api.mousephenotype.org", "/media/J", query, ""))
+            logger.debug(f"URL generated is:{url}")
+            print(url)
+            """Get data back from impc"""
+            try:
+                response = requests.get(url)
+                payload = response.json()
+                '''Data found'''
+                if payload["total"] > 0:
+                    colNames = payload["mediaFiles"][0].keys()
+                    for dict_ in payload["mediaFiles"]:
+                        data = pd.Series(dict_).to_frame()
+                        data = data.transpose()
+                        data.columns = colNames
+                        result.append(data)
+
+            except requests.exceptions.HTTPError as err1:
+                error = str(err1.__dict__["orig"])
+                logger.error(error)
+
+            except requests.exceptions.ConnectionError as err2:
+                error = str(err2.__dict__["orig"])
+                logger.exception(error)
+
+            except requests.exceptions.Timeout as err3:
+                error = str(err3.__dict__["orig"])
+                logger.error(error)
+
+            except requests.exceptions.RequestException as err4:
+                error = str(err4.__dict__["orig"])
+                logger.error(error)
 
         return result
 
