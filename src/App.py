@@ -11,8 +11,9 @@ import sys
 from logging.handlers import RotatingFileHandler
 from urllib3.connection import HTTPConnection
 
-from Model.dccImageInfo import impcInfo, ebiInfo
+from Model.DccImageInfo import impcInfo, ebiInfo
 from db_init import db_init as db
+import Omero.OmeroImage as Omero
 
 outputDir = "/Users/chent/Desktop/KOMP_Project/FetchDCCResult/docs/Output"
 

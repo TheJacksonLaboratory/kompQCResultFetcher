@@ -1,8 +1,9 @@
 import logging
 from urllib.parse import urlencode, urlunsplit
-
+from sqlalchemy import *
 import pandas as pd
 import requests
+from typing import Optional
 
 nameMap = {"IMPC_EYE_001": "IMPC_EYE_050_001", "IMPC_CSD_001": "IMPC_CSD_085_001",
            "IMPC_ECG_001": "IMPC_ECG_025_001"}
@@ -230,7 +231,7 @@ class impcInfo(imageInfo):
         is one month before current date.
     """
 
-    def getFilesWithValidationError(self, *args) -> list:
+    def trackFilesWithValidationError(self, *args) -> list:
 
         pass
 
@@ -243,7 +244,7 @@ class impcInfo(imageInfo):
         is one month before current date.
     """
 
-    def getFilesWithXmlError(self, *args) -> list:
+    def trackFilesWithXmlError(self, *args) -> list:
         pass
 
 
