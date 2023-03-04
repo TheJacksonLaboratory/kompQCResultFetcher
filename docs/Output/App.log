@@ -59,3 +59,56 @@
 [2023-03-02 22:52:40,928->DccImageInfo.py->getImagesByParameterKey():157]DEBUG: URL generated is:https://api.mousephenotype.org/media/J?parameterKey=IMPC_EYE_050_001&start=0&resultsize=2147483647
 [2023-03-02 22:52:43,674->App.py->main():133]DEBUG: Number of records found:3772
 [2023-03-02 22:52:43,797->App.py->main():216]WARNING: Illegal input argument detected
+[2023-03-03 09:35:03,633->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:35:04,070->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:35:04,584->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:35:07,691->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:35:07,701->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:35:07,701->App.py->main():130]INFO: Query by Parameter Key
+[2023-03-03 09:35:46,313->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:35:46,752->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:35:47,234->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:35:50,067->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:35:50,068->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:35:50,068->App.py->main():130]INFO: Query by Parameter Key
+[2023-03-03 09:36:49,880->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:36:50,315->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:36:50,780->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:36:53,702->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:36:53,703->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:36:53,703->App.py->main():130]INFO: Query by Parameter Key
+[2023-03-03 09:36:54,366->App.py->main():133]DEBUG: Number of records found:0
+[2023-03-03 09:38:58,974->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:38:59,410->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:38:59,878->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:39:02,852->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:39:02,853->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:39:02,853->App.py->main():130]INFO: Query by Parameter Key
+[2023-03-03 09:39:03,514->App.py->main():133]DEBUG: Number of records found:0
+[2023-03-03 09:39:58,733->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:39:59,172->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:39:59,633->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:40:02,560->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:40:02,561->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:40:02,561->App.py->main():130]INFO: Query by Parameter Key
+[2023-03-03 09:40:03,204->App.py->main():133]DEBUG: Number of records found:0
+[2023-03-03 09:40:26,294->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:40:26,729->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:40:27,201->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:40:30,275->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:40:30,276->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:40:30,276->App.py->main():130]INFO: Query by Parameter Key
+[2023-03-03 09:40:30,911->App.py->main():133]DEBUG: Number of records found:0
+[2023-03-03 09:42:52,711->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:42:53,147->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:42:53,615->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:42:56,522->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:42:56,523->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:42:56,523->App.py->main():130]INFO: Query by Parameter Key
+[2023-03-03 09:42:57,158->App.py->main():133]DEBUG: Number of records found:0
+[2023-03-03 09:43:47,053->db_init.py->init():64]INFO: Successfully connected to rslims
+[2023-03-03 09:43:47,490->db_init.py->init():64]INFO: Successfully connected to komp
+[2023-03-03 09:43:47,950->App.py->main():67]DEBUG: Number of impc test codes is 1924
+[2023-03-03 09:43:50,867->App.py->main():69]DEBUG: Number of JR number is 1924
+[2023-03-03 09:43:50,868->App.py->main():127]INFO: Reading ['Parameter Key', 'IMPC_EYE_050_001']
+[2023-03-03 09:43:50,868->App.py->main():130]INFO: Query by Parameter Key

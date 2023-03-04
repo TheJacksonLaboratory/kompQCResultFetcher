@@ -13,7 +13,7 @@ from logging.handlers import RotatingFileHandler
 import pandas as pd
 from urllib3.connection import HTTPConnection
 
-from Model.DccImageInfo import impcInfo, ebiInfo
+import Model.IMPC as impc
 from db_init import db_init as db
 import Omero.OmeroImage as Omero
 
@@ -128,25 +128,25 @@ def main():
 
                 if line[0] == "Parameter Key":
                     logger.info("Query by {key}".format(key=line[0]))
-                    newImage = impcInfo("dccimages", parameterKey=line[1].strip())
-                    result = newImage.getImagesByParameterKey(0, 2 ** 31 - 1)
+                    #newImage = impcInfo("dccimages", parameterKey=line[1].strip())
+                    result = impc.filter_image_by(parameterKey=line[1].strip(), start=0, resultsize=2 ** 31 - 1)
                     logger.debug("Number of records found:{size}".format(size=len(result)))
-                    #df = pd.concat(result)
-                    #df.to_csv(outputDir + "/" + "demo.csv")
-                    db.insert_to_db(result, newImage.tableName)
+                    df = pd.concat(result)
+                    df.to_csv(outputDir + "/" + "demo.csv")
+                    #db.insert_to_db(result, newImage.tableName)
 
                 elif line[0] == "AnimalId":
                     logger.info("Query by {key}".format(key=line[0]))
-                    newImage = impcInfo("dccimages", animalId=line[1].strip())
-                    result = newImage.getImagesByAnimalId("", "", 0, 2 ** 31 - 1)
+                    #newImage = impcInfo("dccimages", animalId=line[1].strip())
+                    result = impc.filter_image_by(animalId=line[1].strip(), start=0, resultsize=2 ** 31 - 1)
                     #print(result)
                     logger.debug("Number of records found:{size}".format(size=len(result)))
                     db.insert_to_db(result, newImage.tableName)
 
                 elif line[0] == "JR Number":
                     logger.info("Query by {key}".format(key=line[0]))
-                    newImage = impcInfo("dccimages", colonyId=line[1].strip())
-                    result = newImage.getImagesByColonyId("", "", 0, 2 ** 31 - 1)
+                    #newImage = impcInfo("dccimages", colonyId=line[1].strip())
+                    result = impc.filter_image_by(colonyId=line[1].strip(), start=0, resultsize=2 ** 31 - 1)
                     #print(result)
                     logger.debug("Number of records found:{size}".format(size=len(result)))
                     db.insert_to_db(result, newImage.tableName)

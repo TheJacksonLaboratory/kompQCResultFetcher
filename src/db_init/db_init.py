@@ -37,17 +37,6 @@ database = "komp"
 
 logger = logging.getLogger("Core")
 
-"""
-Function to list of JR nubers into n parts randomly
-@param:
-    colonyIds: List of JR numbers
-    n: size of partitioned list
-"""
-
-
-def partition(colonyIds, n):
-    random.shuffle(colonyIds)
-    return [colonyIds[i::n] for i in range(n)]
 
 
 """
