@@ -11,6 +11,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 
 import pandas as pd
+from sqlalchemy import create_engine
 from urllib3.connection import HTTPConnection
 
 import Model.IMPC as impc
@@ -42,7 +43,7 @@ Config a .txt file, with animalId/parameterCode/colonyId on each line.
 3. If the line is a IMPC code -> query by parameter key
 """
 
-
+'''
 def main():
     """Set higher timeout"""
     HTTPConnection.default_socket_options = (HTTPConnection.default_socket_options + [
@@ -218,6 +219,29 @@ def main():
     # Close the connection
     conn_to_komp.close()
     conn_to_rslims.close()
+
+'''
+
+
+def main():
+    """Set higher timeout"""
+    HTTPConnection.default_socket_options = (HTTPConnection.default_socket_options + [
+        (socket.SOL_SOCKET, socket.SO_SNDBUF, 1000000),
+        (socket.SOL_SOCKET, socket.SO_RCVBUF, 1000000)
+    ])
+
+    parameterKey = "IMPC_EYE_050_001"
+    result = impc.filter_image_by(parameterKey=parameterKey, start=0, resultsize=2 ** 31 - 1)
+    user = "root"
+    password = "Ql4nc,tzjzsblj"
+    server = "localhost"
+    database = "KOMP_Training"
+    engine = create_engine("mysql+mysqlconnector://{0}:{1}@{2}/{3}".
+                           format(user, password, server, database),
+                           pool_recycle=3600,
+                           pool_timeout=57600,
+                           future=True)
+    impc.insert_to_db(dataset=result, engine=engine, table="dccImages")
 
 
 # Press the green button in the gutter to run the script.
